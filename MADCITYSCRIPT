@@ -1,0 +1,150 @@
+-- CONFIG
+local keyCorreta = "Duck"
+local tempoLimite = 12 * 60 * 60
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local id = "TXDATA_" .. LocalPlayer.UserId
+local data = {}
+
+-- Tempo
+pcall(function()
+    if isfile(id .. ".json") then
+        local saved = readfile(id .. ".json")
+        data = HttpService:JSONDecode(saved)
+    end
+end)
+
+if not data.inicio then
+    data.inicio = os.time()
+    writefile(id .. ".json", HttpService:JSONEncode(data))
+end
+
+local tempoRestante = tempoLimite - (os.time() - data.inicio)
+if tempoRestante <= 0 then
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "TX Bypass",
+        Text = "❌ Seu tempo acabou.",
+        Duration = 6
+    })
+    return
+end
+
+-- GUI
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "TX_Painel"
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 350, 0, 260)
+frame.Position = UDim2.new(0.5, -175, 0.5, -130)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
+frame.BorderSizePixel = 0
+
+local UICorner = Instance.new("UICorner", frame)
+UICorner.CornerRadius = UDim.new(0, 12)
+
+-- Gradiente e sombra
+local gradient = Instance.new("UIGradient", frame)
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 25, 55)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 80, 140))
+}
+
+local shadow = Instance.new("ImageLabel", frame)
+shadow.Size = UDim2.new(1, 40, 1, 40)
+shadow.Position = UDim2.new(0, -20, 0, -20)
+shadow.BackgroundTransparency = 1
+shadow.Image = "rbxassetid://1316045217"
+shadow.ImageTransparency = 0.85
+shadow.ScaleType = Enum.ScaleType.Slice
+shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+
+-- Título
+local titulo = Instance.new("TextLabel", frame)
+titulo.Size = UDim2.new(1, 0, 0, 50)
+titulo.Text = "⚡ ANÔNIMO - TX BYPASS 1.4"
+titulo.Font = Enum.Font.GothamBold
+titulo.TextSize = 20
+titulo.TextColor3 = Color3.fromRGB(200, 255, 255)
+titulo.BackgroundTransparency = 1
+
+-- Nome do usuário
+local usuario = Instance.new("TextLabel", frame)
+usuario.Size = UDim2.new(1, -20, 0, 20)
+usuario.Position = UDim2.new(0, 10, 0, 55)
+usuario.Text = "Usuário: " .. LocalPlayer.Name
+usuario.TextColor3 = Color3.fromRGB(170, 170, 255)
+usuario.Font = Enum.Font.GothamSemibold
+usuario.TextSize = 14
+usuario.BackgroundTransparency = 1
+
+-- Tempo restante
+local tempoLabel = Instance.new("TextLabel", frame)
+tempoLabel.Size = UDim2.new(1, -20, 0, 20)
+tempoLabel.Position = UDim2.new(0, 10, 0, 80)
+local horas = math.floor(tempoRestante / 3600)
+local minutos = math.floor((tempoRestante % 3600) / 60)
+tempoLabel.Text = "Tempo restante: " .. horas .. "h " .. minutos .. "m"
+tempoLabel.TextColor3 = Color3.fromRGB(170, 255, 170)
+tempoLabel.Font = Enum.Font.GothamSemibold
+tempoLabel.TextSize = 14
+tempoLabel.BackgroundTransparency = 1
+
+-- Key input
+local input = Instance.new("TextBox", frame)
+input.PlaceholderText = "Digite sua Key..."
+input.Size = UDim2.new(0.85, 0, 0, 30)
+input.Position = UDim2.new(0.075, 0, 0, 120)
+input.TextSize = 14
+input.Font = Enum.Font.Gotham
+input.Text = ""
+input.ClearTextOnFocus = false
+input.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
+input.TextColor3 = Color3.new(1,1,1)
+
+local inputCorner = Instance.new("UICorner", input)
+inputCorner.CornerRadius = UDim.new(0, 6)
+
+-- Botão iniciar
+local botao = Instance.new("TextButton", frame)
+botao.Size = UDim2.new(0.85, 0, 0, 35)
+botao.Position = UDim2.new(0.075, 0, 0, 165)
+botao.Text = "✅ Iniciar Sistema"
+botao.TextColor3 = Color3.new(1,1,1)
+botao.Font = Enum.Font.GothamBold
+botao.TextSize = 14
+botao.BackgroundColor3 = Color3.fromRGB(0, 200, 80)
+
+local botaoCorner = Instance.new("UICorner", botao)
+botaoCorner.CornerRadius = UDim.new(0, 6)
+
+-- Status
+local status = Instance.new("TextLabel", frame)
+status.Size = UDim2.new(1, 0, 0, 20)
+status.Position = UDim2.new(0, 0, 1, -25)
+status.Text = "🔐 Aguardando Key..."
+status.Font = Enum.Font.Gotham
+status.TextColor3 = Color3.fromRGB(255, 255, 100)
+status.BackgroundTransparency = 1
+status.TextSize = 13
+
+-- Função de clique
+botao.MouseButton1Click:Connect(function()
+    if input.Text == keyCorreta then
+        status.Text = "✅ Key aceita. Iniciando script..."
+        wait(1)
+        gui:Destroy()
+
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "TX Bypass",
+            Text = "Sistema iniciado. Boa sorte!",
+            Duration = 5
+        })
+
+        -- EXECUTA SEU SCRIPT ORIGINAL
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/VanPotent/EpicHub/refs/heads/main/my/ar", true))()
+    else
+        status.Text = "❌ Key inválida"
+        status.TextColor3 = Color3.fromRGB(255, 80, 80)
+    end
+end)
