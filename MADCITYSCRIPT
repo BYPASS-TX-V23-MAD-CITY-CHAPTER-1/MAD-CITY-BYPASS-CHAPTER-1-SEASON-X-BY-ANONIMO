@@ -4,182 +4,532 @@ local tempoLimite = 12 * 60 * 60 -- 12 horas em segundos
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local id = "TXDATA_" .. LocalPlayer.UserId
 local data = {}
 
--- TEMPO
-pcall(function()
-    if isfile(id .. ".json") then
-        local saved = readfile(id .. ".json")
-        data = HttpService:JSONDecode(saved)
-    end
-end)
-
-if not data.inicio then
-    data.inicio = os.time()
-    writefile(id .. ".json", HttpService:JSONEncode(data))
+-- TRATAMENTO DE ERROS AO CARREGAR DADOS
+local function carregarDados()
+    local sucesso, dados = pcall(function()
+        if isfile(id .. ".json") then
+            return HttpService:JSONDecode(readfile(id .. ".json"))
+        end
+        return {}
+    end)
+    return sucesso and dados or {}
 end
 
+data = carregarDados()
+
+-- INICIALIZAR TEMPO SE NÃO EXISTIR
+if not data.inicio then
+    data.inicio = os.time()
+    pcall(function()
+        writefile(id .. ".json", HttpService:JSONEncode(data))
+    end)
+end
+
+-- VERIFICAR TEMPO RESTANTE
 local tempoRestante = tempoLimite - (os.time() - data.inicio)
 if tempoRestante <= 0 then
     game.StarterGui:SetCore("SendNotification", {
-        Title = "TX Bypass",
+        Title = "TX Premium",
         Text = "❌ Seu tempo acabou.",
         Duration = 6
     })
     return
 end
 
--- GUI
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "TX_Painel"
+-- FUNÇÃO PARA CRIAR ELEMENTOS DE UI
+local function criarElemento(tipo, props)
+    local elemento = Instance.new(tipo)
+    for prop, valor in pairs(props) do
+        elemento[prop] = valor
+    end
+    return elemento
+end
 
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 350, 0, 260)
-frame.Position = UDim2.new(0.5, -175, 0.5, -130)
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
-frame.BorderSizePixel = 0
+-- ANIMAÇÃO DE CARREGAMENTO
+local function animacaoCarregamento()
+    local loadingGui = criarElemento("ScreenGui", {
+        Name = "TX_Loading",
+        Parent = game.CoreGui
+    })
 
-local UICorner = Instance.new("UICorner", frame)
-UICorner.CornerRadius = UDim.new(0, 12)
+    local container = criarElemento("Frame", {
+        Parent = loadingGui,
+        Size = UDim2.new(0, 300, 0, 60),
+        Position = UDim2.new(0.5, -150, 0.5, -30),
+        BackgroundTransparency = 1,
+        AnchorPoint = Vector2.new(0.5, 0.5)
+    })
 
--- Gradiente
-local gradient = Instance.new("UIGradient", frame)
-gradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 25, 55)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 80, 140))
-}
+    local textoLoading = criarElemento("TextLabel", {
+        Parent = container,
+        Size = UDim2.new(1, 0, 0, 30),
+        Position = UDim2.new(0, 0, 0, 0),
+        Text = "TX...",
+        Font = Enum.Font.GothamBold,
+        TextSize = 24,
+        TextColor3 = Color3.fromRGB(0, 255, 255),
+        BackgroundTransparency = 1,
+        TextXAlignment = Enum.TextXAlignment.Center
+    })
 
--- Título
-local titulo = Instance.new("TextLabel", frame)
-titulo.Size = UDim2.new(1, 0, 0, 50)
-titulo.Text = "🔐 TX ANT BYPASS 1.4"
-titulo.Font = Enum.Font.GothamBold
-titulo.TextSize = 20
-titulo.TextColor3 = Color3.fromRGB(200, 255, 255)
-titulo.BackgroundTransparency = 1
+    local barraContainer = criarElemento("Frame", {
+        Parent = container,
+        Size = UDim2.new(1, 0, 0, 4),
+        Position = UDim2.new(0, 0, 1, -10),
+        BackgroundColor3 = Color3.fromRGB(40, 40, 60),
+        BorderSizePixel = 0
+    })
 
--- Campo de entrada da Key
-local input = Instance.new("TextBox", frame)
-input.PlaceholderText = "Digite sua Key..."
-input.Size = UDim2.new(0.85, 0, 0, 30)
-input.Position = UDim2.new(0.075, 0, 0, 120)
-input.TextSize = 14
-input.Font = Enum.Font.Gotham
-input.Text = ""
-input.ClearTextOnFocus = false
-input.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
-input.TextColor3 = Color3.new(1,1,1)
+    local barraProgresso = criarElemento("Frame", {
+        Parent = barraContainer,
+        Size = UDim2.new(0, 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(0, 255, 255),
+        BorderSizePixel = 0
+    })
 
-local inputCorner = Instance.new("UICorner", input)
-inputCorner.CornerRadius = UDim.new(0, 6)
+    TweenService:Create(barraProgresso, TweenInfo.new(2, Enum.EasingStyle.Linear), {
+        Size = UDim2.new(1, 0, 1, 0)
+    }):Play()
 
--- Botão de verificação da Key
-local botao = Instance.new("TextButton", frame)
-botao.Size = UDim2.new(0.85, 0, 0, 35)
-botao.Position = UDim2.new(0.075, 0, 0, 165)
-botao.Text = "✅ Verificar Key"
-botao.TextColor3 = Color3.new(1,1,1)
-botao.Font = Enum.Font.GothamBold
-botao.TextSize = 14
-botao.BackgroundColor3 = Color3.fromRGB(0, 200, 80)
+    task.wait(1.5)
+    textoLoading.Text = "ANÔNIMO"
+    task.wait(0.5)
+    loadingGui:Destroy()
+end
 
-local botaoCorner = Instance.new("UICorner", botao)
-botaoCorner.CornerRadius = UDim.new(0, 6)
+-- GUI PRINCIPAL
+local gui = criarElemento("ScreenGui", {
+    Name = "TX_Painel",
+    Parent = game.CoreGui,
+    ResetOnSpawn = false
+})
 
--- Status
-local status = Instance.new("TextLabel", frame)
-status.Size = UDim2.new(1, 0, 0, 20)
-status.Position = UDim2.new(0, 0, 1, -25)
-status.Text = "🔐 Aguardando Key..."
-status.Font = Enum.Font.Gotham
-status.TextColor3 = Color3.fromRGB(255, 255, 100)
-status.BackgroundTransparency = 1
-status.TextSize = 13
+-- TELA DE LOGIN
+local loginFrame = criarElemento("Frame", {
+    Parent = gui,
+    Size = UDim2.new(0, 350, 0, 220),
+    Position = UDim2.new(0.5, -175, 0.5, -110),
+    BackgroundColor3 = Color3.fromRGB(10, 10, 15),
+    BorderSizePixel = 0,
+    ClipsDescendants = true
+})
 
--- Função de clique
-botao.MouseButton1Click:Connect(function()
-    if input.Text == keyCorreta then
-        status.Text = "✅ Key aceita. Exibindo painel de manutenção..."
-        wait(1)
-        frame:Destroy()
+criarElemento("UICorner", {
+    Parent = loginFrame,
+    CornerRadius = UDim.new(0, 8)
+})
 
-        -- Painel de manutenção
-        local maintenanceFrame = Instance.new("Frame", gui)
-        maintenanceFrame.Size = UDim2.new(0, 400, 0, 300)
-        maintenanceFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
-        maintenanceFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
-        maintenanceFrame.BorderSizePixel = 0
+-- SOMBRA
+local shadow = criarElemento("ImageLabel", {
+    Parent = loginFrame,
+    Size = UDim2.new(1, 10, 1, 10),
+    Position = UDim2.new(0, -5, 0, -5),
+    Image = "rbxassetid://1316045217",
+    ImageColor3 = Color3.fromRGB(0, 0, 0),
+    ImageTransparency = 0.7,
+    ScaleType = Enum.ScaleType.Slice,
+    SliceCenter = Rect.new(10, 10, 118, 118),
+    BackgroundTransparency = 1
+})
 
-        local maintenanceCorner = Instance.new("UICorner", maintenanceFrame)
-        maintenanceCorner.CornerRadius = UDim.new(0, 12)
+-- TÍTULO LOGIN
+local tituloLogin = criarElemento("TextLabel", {
+    Parent = loginFrame,
+    Size = UDim2.new(1, 0, 0, 50),
+    Text = "TX PREMIUM",
+    Font = Enum.Font.GothamBlack,
+    TextSize = 24,
+    TextColor3 = Color3.fromRGB(0, 200, 200),
+    BackgroundTransparency = 1,
+    TextStrokeColor3 = Color3.fromRGB(0, 50, 50),
+    TextStrokeTransparency = 0.5
+})
 
-        -- Avatar do jogador
-        local avatar = Instance.new("ImageLabel", maintenanceFrame)
-        avatar.Size = UDim2.new(0, 100, 0, 100)
-        avatar.Position = UDim2.new(0.5, -50, 0, 20)
-        avatar.BackgroundTransparency = 1
-        avatar.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+-- CAMPO DE KEY
+local inputKey = criarElemento("TextBox", {
+    Parent = loginFrame,
+    PlaceholderText = "Digite sua Key...",
+    Size = UDim2.new(0.85, 0, 0, 35),
+    Position = UDim2.new(0.075, 0, 0, 70),
+    TextSize = 14,
+    Font = Enum.Font.Gotham,
+    Text = "",
+    ClearTextOnFocus = false,
+    BackgroundColor3 = Color3.fromRGB(20, 20, 30),
+    TextColor3 = Color3.new(1, 1, 1)
+})
 
-        -- Nome do jogador
-        local nome = Instance.new("TextLabel", maintenanceFrame)
-        nome.Size = UDim2.new(1, 0, 0, 30)
-        nome.Position = UDim2.new(0, 0, 0, 130)
-        nome.Text = "Usuário: " .. LocalPlayer.Name
-        nome.Font = Enum.Font.GothamBold
-        nome.TextSize = 18
-        nome.TextColor3 = Color3.fromRGB(200, 255, 255)
-        nome.BackgroundTransparency = 1
+criarElemento("UICorner", {
+    Parent = inputKey,
+    CornerRadius = UDim.new(0, 6)
+})
 
-        -- Tempo restante
-        local horas = math.floor(tempoRestante / 3600)
-        local minutos = math.floor((tempoRestante % 3600) / 60)
-        local tempoLabel = Instance.new("TextLabel", maintenanceFrame)
-        tempoLabel.Size = UDim2.new(1, 0, 0, 20)
-        tempoLabel.Position = UDim2.new(0, 0, 0, 170)
-        tempoLabel.Text = "Tempo restante: " .. horas .. "h " .. minutos .. "m"
-        tempoLabel.Font = Enum.Font.Gotham
-        tempoLabel.TextSize = 14
-        tempoLabel.TextColor3 = Color3.fromRGB(170, 255, 170)
-        tempoLabel.BackgroundTransparency = 1
+-- BOTÃO LOGIN
+local btnLogin = criarElemento("TextButton", {
+    Parent = loginFrame,
+    Size = UDim2.new(0.85, 0, 0, 40),
+    Position = UDim2.new(0.075, 0, 0, 120),
+    Text = "ENTRAR",
+    Font = Enum.Font.GothamBlack,
+    TextSize = 16,
+    TextColor3 = Color3.new(1, 1, 1),
+    BackgroundColor3 = Color3.fromRGB(0, 150, 150)
+})
 
-        -- FPS
-        local fpsLabel = Instance.new("TextLabel", maintenanceFrame)
-        fpsLabel.Size = UDim2.new(1, 0, 0, 20)
-        fpsLabel.Position = UDim2.new(0, 0, 0, 200)
-        fpsLabel.Text = "FPS: Calculando..."
-        fpsLabel.Font = Enum.Font.Gotham
-        fpsLabel.TextSize = 14
-        fpsLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
-        fpsLabel.BackgroundTransparency = 1
+criarElemento("UICorner", {
+    Parent = btnLogin,
+    CornerRadius = UDim.new(0, 6)
+})
 
-        -- Mensagem de manutenção
-        local mensagem = Instance.new("TextLabel", maintenanceFrame)
-        mensagem.Size = UDim2.new(1, -20, 0, 60)
-        mensagem.Position = UDim2.new(0, 10, 0, 230)
-        mensagem.Text = "🛠️ Estamos em manutenção\nMotivo: Corrigindo bugs e atualizando o bypass"
-        mensagem.Font = Enum.Font.GothamBold
-        mensagem.TextSize = 16
-        mensagem.TextColor3 = Color3.fromRGB(255, 100, 100)
-        mensagem.BackgroundTransparency = 1
-        mensagem.TextWrapped = true
+-- MENU PRINCIPAL (APÓS LOGIN)
+local mainFrame = criarElemento("Frame", {
+    Parent = gui,
+    Size = UDim2.new(0, 400, 0, 500),
+    Position = UDim2.new(0.5, -200, 0.5, -250),
+    BackgroundColor3 = Color3.fromRGB(10, 10, 15),
+    BorderSizePixel = 0,
+    Visible = false,
+    ClipsDescendants = true
+})
 
-        -- Atualização do FPS
-        local lastTime = tick()
-        local frames = 0
-        RunService.RenderStepped:Connect(function()
-            frames = frames + 1
-            local currentTime = tick()
-            if currentTime - lastTime >= 1 then
-                fpsLabel.Text = "FPS: " .. frames
-                frames = 0
-                lastTime = currentTime
+criarElemento("UICorner", {
+    Parent = mainFrame,
+    CornerRadius = UDim.new(0, 8)
+})
+
+-- CABEÇALHO
+local header = criarElemento("Frame", {
+    Parent = mainFrame,
+    Size = UDim2.new(1, 0, 0, 50),
+    BackgroundColor3 = Color3.fromRGB(15, 15, 25),
+    BorderSizePixel = 0
+})
+
+criarElemento("UICorner", {
+    Parent = header,
+    CornerRadius = UDim.new(0, 8)
+})
+
+local tituloMain = criarElemento("TextLabel", {
+    Parent = header,
+    Size = UDim2.new(0.7, 0, 1, 0),
+    Position = UDim2.new(0.15, 0, 0, 0),
+    Text = "TX PREMIUM v5.0",
+    Font = Enum.Font.GothamBlack,
+    TextSize = 18,
+    TextColor3 = Color3.fromRGB(0, 200, 200),
+    BackgroundTransparency = 1
+})
+
+-- BOTÃO MINIMIZAR
+local btnMinimizar = criarElemento("TextButton", {
+    Parent = header,
+    Size = UDim2.new(0, 40, 0, 40),
+    Position = UDim2.new(1, -45, 0.5, -20),
+    Text = "_",
+    Font = Enum.Font.GothamBlack,
+    TextSize = 24,
+    TextColor3 = Color3.new(1, 1, 1),
+    BackgroundColor3 = Color3.fromRGB(20, 20, 40)
+})
+
+criarElemento("UICorner", {
+    Parent = btnMinimizar,
+    CornerRadius = UDim.new(0, 6)
+})
+
+-- PERFIL DO USUÁRIO
+local profileFrame = criarElemento("Frame", {
+    Parent = mainFrame,
+    Size = UDim2.new(1, -20, 0, 80),
+    Position = UDim2.new(0, 10, 0, 60),
+    BackgroundColor3 = Color3.fromRGB(15, 15, 25),
+    BorderSizePixel = 0
+})
+
+criarElemento("UICorner", {
+    Parent = profileFrame,
+    CornerRadius = UDim.new(0, 8)
+})
+
+local avatarFrame = criarElemento("Frame", {
+    Parent = profileFrame,
+    Size = UDim2.new(0, 50, 0, 50),
+    Position = UDim2.new(0, 15, 0.5, -25),
+    BackgroundColor3 = Color3.fromRGB(20, 20, 40),
+    BorderSizePixel = 0
+})
+
+criarElemento("UICorner", {
+    Parent = avatarFrame,
+    CornerRadius = UDim.new(1, 0)
+})
+
+local avatar = criarElemento("ImageLabel", {
+    Parent = avatarFrame,
+    Size = UDim2.new(1, -4, 1, -4),
+    Position = UDim2.new(0, 2, 0, 2),
+    BackgroundTransparency = 1,
+    Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+})
+
+criarElemento("UICorner", {
+    Parent = avatar,
+    CornerRadius = UDim.new(1, 0)
+})
+
+local nomeUsuario = criarElemento("TextLabel", {
+    Parent = profileFrame,
+    Size = UDim2.new(0, 250, 0, 25),
+    Position = UDim2.new(0, 80, 0, 15),
+    Text = LocalPlayer.Name,
+    Font = Enum.Font.GothamBold,
+    TextSize = 16,
+    TextColor3 = Color3.fromRGB(220, 220, 220),
+    BackgroundTransparency = 1,
+    TextXAlignment = Enum.TextXAlignment.Left
+})
+
+local tempoLabel = criarElemento("TextLabel", {
+    Parent = profileFrame,
+    Size = UDim2.new(0, 250, 0, 20),
+    Position = UDim2.new(0, 80, 0, 45),
+    Text = "⏳ " .. math.floor(tempoRestante/3600) .. "h " .. math.floor((tempoRestante%3600)/60) .. "m restantes",
+    Font = Enum.Font.Gotham,
+    TextSize = 14,
+    TextColor3 = Color3.fromRGB(150, 150, 150),
+    BackgroundTransparency = 1,
+    TextXAlignment = Enum.TextXAlignment.Left
+})
+
+-- SEÇÃO DE FUNÇÕES
+local funcoesFrame = criarElemento("Frame", {
+    Parent = mainFrame,
+    Size = UDim2.new(1, -20, 0, 320),
+    Position = UDim2.new(0, 10, 0, 150),
+    BackgroundColor3 = Color3.fromRGB(15, 15, 25),
+    BorderSizePixel = 0
+})
+
+criarElemento("UICorner", {
+    Parent = funcoesFrame,
+    CornerRadius = UDim.new(0, 8)
+})
+
+local tituloFuncoes = criarElemento("TextLabel", {
+    Parent = funcoesFrame,
+    Size = UDim2.new(1, 0, 0, 40),
+    Text = "FUNÇÕES",
+    Font = Enum.Font.GothamBlack,
+    TextSize = 16,
+    TextColor3 = Color3.fromRGB(0, 200, 200),
+    BackgroundTransparency = 1
+})
+
+-- LISTA DE FUNÇÕES
+local function criarBotaoFuncao(nome, posicaoY, cor)
+    local btn = criarElemento("TextButton", {
+        Parent = funcoesFrame,
+        Size = UDim2.new(1, -20, 0, 40),
+        Position = UDim2.new(0, 10, 0, posicaoY),
+        Text = nome,
+        Font = Enum.Font.GothamBold,
+        TextSize = 14,
+        TextColor3 = Color3.new(1, 1, 1),
+        BackgroundColor3 = cor
+    })
+
+    criarElemento("UICorner", {
+        Parent = btn,
+        CornerRadius = UDim.new(0, 6)
+    })
+
+    return btn
+end
+
+-- BOTÕES DE FUNÇÕES
+local btnAimbot = criarBotaoFuncao("🎯 AIMBOT", 50, Color3.fromRGB(200, 50, 50))
+local btnESP = criarBotaoFuncao("🔴 ESP BOX", 100, Color3.fromRGB(200, 50, 50))
+local btnFarm2M = criarBotaoFuncao("💰 FARM 2M/HORA", 150, Color3.fromRGB(0, 180, 0))
+local btnLv100 = criarBotaoFuncao("📈 LVL 100 INSTANTÂNEO", 200, Color3.fromRGB(0, 180, 0))
+local btnOtimizar = criarBotaoFuncao("⚡ OTIMIZAR JOGO", 250, Color3.fromRGB(0, 100, 200))
+
+-- FUNÇÃO AIMBOT (FUNCIONAL)
+local aimbotAtivo = false
+local function toggleAimbot()
+    aimbotAtivo = not aimbotAtivo
+    btnAimbot.BackgroundColor3 = aimbotAtivo and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+    
+    if aimbotAtivo then
+        spawn(function()
+            while aimbotAtivo and task.wait() do
+                local alvo = nil
+                local distanciaMaisProxima = math.huge
+                
+                for _, player in ipairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                        local distancia = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                        if distancia < distanciaMaisProxima then
+                            alvo = player
+                            distanciaMaisProxima = distancia
+                        end
+                    end
+                end
+                
+                if alvo and alvo.Character and alvo.Character:FindFirstChild("HumanoidRootPart") then
+                    local camera = workspace.CurrentCamera
+                    camera.CFrame = CFrame.new(camera.CFrame.Position, alvo.Character.HumanoidRootPart.Position)
+                end
             end
         end)
+    end
+end
 
+-- FUNÇÃO ESP (FUNCIONAL)
+local espAtivo = false
+local boxes = {}
+local function toggleESP()
+    espAtivo = not espAtivo
+    btnESP.BackgroundColor3 = espAtivo and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 50, 50)
+    
+    if espAtivo then
+        -- Cria caixas para jogadores existentes
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+                if humanoidRootPart then
+                    local box = Instance.new("BoxHandleAdornment")
+                    box.Name = "ESP_" .. player.Name
+                    box.Adornee = humanoidRootPart
+                    box.AlwaysOnTop = true
+                    box.ZIndex = 10
+                    box.Size = humanoidRootPart.Size + Vector3.new(0.1, 0.1, 0.1)
+                    box.Color3 = Color3.new(1, 0, 0)
+                    box.Transparency = 0.5
+                    box.Parent = humanoidRootPart
+                    boxes[player] = box
+                end
+            end
+        end
+        
+        -- Conecta para novos jogadores
+        Players.PlayerAdded:Connect(function(player)
+            player.CharacterAdded:Connect(function(character)
+                if espAtivo then
+                    local humanoidRootPart = character:WaitForChild("HumanoidRootPart", 10)
+                    if humanoidRootPart then
+                        local box = Instance.new("BoxHandleAdornment")
+                        box.Name = "ESP_" .. player.Name
+                        box.Adornee = humanoidRootPart
+                        box.AlwaysOnTop = true
+                        box.ZIndex = 10
+                        box.Size = humanoidRootPart.Size + Vector3.new(0.1, 0.1, 0.1)
+                        box.Color3 = Color3.new(1, 0, 0)
+                        box.Transparency = 0.5
+                        box.Parent = humanoidRootPart
+                        boxes[player] = box
+                    end
+                end
+            end)
+        end)
     else
-        status.Text = "❌ Key inválida"
-        status.TextColor3 = Color3.fromRGB(255, 80, 80)
+        -- Remove todas as caixas
+        for _, box in pairs(boxes) do
+            if box then
+                box:Destroy()
+            end
+        end
+        boxes = {}
+    end
+end
+
+-- FUNÇÃO FAKE BAN
+local function mostrarFakeBan()
+    local banGui = criarElemento("ScreenGui", {
+        Name = "TX_Ban",
+        Parent = game.CoreGui
+    })
+
+    local banFrame = criarElemento("Frame", {
+        Parent = banGui,
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3 = Color3.fromRGB(15, 0, 0),
+        BorderSizePixel = 0
+    })
+
+    local banMsg = criarElemento("TextLabel", {
+        Parent = banFrame,
+        Size = UDim2.new(1, 0, 0, 200),
+        Position = UDim2.new(0, 0, 0.5, -100),
+        Text = "Você foi removido desta experiência\n\nBanned for using cheat\nWe do not tolerate any type of hack\n\nEnd of discouragement: 10000000 - 12 -27 minutes",
+        Font = Enum.Font.GothamBlack,
+        TextSize = 24,
+        TextColor3 = Color3.new(1, 1, 1),
+        BackgroundTransparency = 1,
+        TextWrapped = true
+    })
+
+    -- Remove após 10 segundos
+    task.wait(10)
+    banGui:Destroy()
+end
+
+-- FUNÇÃO MINIMIZAR
+local minimizado = false
+local function toggleMinimizar()
+    minimizado = not minimizado
+    if minimizado then
+        mainFrame.Size = UDim2.new(0, 400, 0, 50)
+        btnMinimizar.Text = "+"
+    else
+        mainFrame.Size = UDim2.new(0, 400, 0, 500)
+        btnMinimizar.Text = "_"
+    end
+end
+
+-- CONECTA BOTÕES
+btnAimbot.MouseButton1Click:Connect(toggleAimbot)
+btnESP.MouseButton1Click:Connect(toggleESP)
+btnMinimizar.MouseButton1Click:Connect(toggleMinimizar)
+
+btnFarm2M.MouseButton1Click:Connect(function()
+    mostrarFakeBan()
+end)
+
+btnLv100.MouseButton1Click:Connect(function()
+    mostrarFakeBan()
+end)
+
+btnOtimizar.MouseButton1Click:Connect(function()
+    settings().Rendering.QualityLevel = 1
+    game:GetService("Lighting").GlobalShadows = false
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "TX Premium",
+        Text = "✅ Jogo otimizado!",
+        Duration = 3
+    })
+end)
+
+-- BOTÃO LOGIN
+btnLogin.MouseButton1Click:Connect(function()
+    if inputKey.Text == keyCorreta then
+        animacaoCarregamento()
+        task.wait(2)
+        loginFrame:Destroy()
+        mainFrame.Visible = true
+    else
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "TX Premium",
+            Text = "Key incorreta!",
+            Duration = 3
+        })
     end
 end)
+
+-- INICIA ANIMAÇÃO
+animacaoCarregamento()
