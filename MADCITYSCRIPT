@@ -1,13 +1,14 @@
--- CONFIG
+-- CONFIGURAÇÃO
 local keyCorreta = "Duck"
-local tempoLimite = 12 * 60 * 60
+local tempoLimite = 12 * 60 * 60 -- 12 horas em segundos
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local id = "TXDATA_" .. LocalPlayer.UserId
 local data = {}
 
--- Tempo
+-- TEMPO
 pcall(function()
     if isfile(id .. ".json") then
         local saved = readfile(id .. ".json")
@@ -43,54 +44,23 @@ frame.BorderSizePixel = 0
 local UICorner = Instance.new("UICorner", frame)
 UICorner.CornerRadius = UDim.new(0, 12)
 
--- Gradiente e sombra
+-- Gradiente
 local gradient = Instance.new("UIGradient", frame)
 gradient.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 25, 55)),
     ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 80, 140))
 }
 
-local shadow = Instance.new("ImageLabel", frame)
-shadow.Size = UDim2.new(1, 40, 1, 40)
-shadow.Position = UDim2.new(0, -20, 0, -20)
-shadow.BackgroundTransparency = 1
-shadow.Image = "rbxassetid://1316045217"
-shadow.ImageTransparency = 0.85
-shadow.ScaleType = Enum.ScaleType.Slice
-shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-
 -- Título
 local titulo = Instance.new("TextLabel", frame)
 titulo.Size = UDim2.new(1, 0, 0, 50)
-titulo.Text = "⚡ ANÔNIMO - TX BYPASS 1.4"
+titulo.Text = "🔐 TX ANT BYPASS 1.4"
 titulo.Font = Enum.Font.GothamBold
 titulo.TextSize = 20
 titulo.TextColor3 = Color3.fromRGB(200, 255, 255)
 titulo.BackgroundTransparency = 1
 
--- Nome do usuário
-local usuario = Instance.new("TextLabel", frame)
-usuario.Size = UDim2.new(1, -20, 0, 20)
-usuario.Position = UDim2.new(0, 10, 0, 55)
-usuario.Text = "Usuário: " .. LocalPlayer.Name
-usuario.TextColor3 = Color3.fromRGB(170, 170, 255)
-usuario.Font = Enum.Font.GothamSemibold
-usuario.TextSize = 14
-usuario.BackgroundTransparency = 1
-
--- Tempo restante
-local tempoLabel = Instance.new("TextLabel", frame)
-tempoLabel.Size = UDim2.new(1, -20, 0, 20)
-tempoLabel.Position = UDim2.new(0, 10, 0, 80)
-local horas = math.floor(tempoRestante / 3600)
-local minutos = math.floor((tempoRestante % 3600) / 60)
-tempoLabel.Text = "Tempo restante: " .. horas .. "h " .. minutos .. "m"
-tempoLabel.TextColor3 = Color3.fromRGB(170, 255, 170)
-tempoLabel.Font = Enum.Font.GothamSemibold
-tempoLabel.TextSize = 14
-tempoLabel.BackgroundTransparency = 1
-
--- Key input
+-- Campo de entrada da Key
 local input = Instance.new("TextBox", frame)
 input.PlaceholderText = "Digite sua Key..."
 input.Size = UDim2.new(0.85, 0, 0, 30)
@@ -105,11 +75,11 @@ input.TextColor3 = Color3.new(1,1,1)
 local inputCorner = Instance.new("UICorner", input)
 inputCorner.CornerRadius = UDim.new(0, 6)
 
--- Botão iniciar
+-- Botão de verificação da Key
 local botao = Instance.new("TextButton", frame)
 botao.Size = UDim2.new(0.85, 0, 0, 35)
 botao.Position = UDim2.new(0.075, 0, 0, 165)
-botao.Text = "✅ Iniciar Sistema"
+botao.Text = "✅ Verificar Key"
 botao.TextColor3 = Color3.new(1,1,1)
 botao.Font = Enum.Font.GothamBold
 botao.TextSize = 14
@@ -131,18 +101,83 @@ status.TextSize = 13
 -- Função de clique
 botao.MouseButton1Click:Connect(function()
     if input.Text == keyCorreta then
-        status.Text = "✅ Key aceita. Iniciando script..."
+        status.Text = "✅ Key aceita. Exibindo painel de manutenção..."
         wait(1)
-        gui:Destroy()
+        frame:Destroy()
 
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "TX Bypass",
-            Text = "Sistema iniciado. Boa sorte!",
-            Duration = 5
-        })
+        -- Painel de manutenção
+        local maintenanceFrame = Instance.new("Frame", gui)
+        maintenanceFrame.Size = UDim2.new(0, 400, 0, 300)
+        maintenanceFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+        maintenanceFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
+        maintenanceFrame.BorderSizePixel = 0
 
-        -- EXECUTA SEU SCRIPT ORIGINAL
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/VanPotent/EpicHub/refs/heads/main/my/ar", true))()
+        local maintenanceCorner = Instance.new("UICorner", maintenanceFrame)
+        maintenanceCorner.CornerRadius = UDim.new(0, 12)
+
+        -- Avatar do jogador
+        local avatar = Instance.new("ImageLabel", maintenanceFrame)
+        avatar.Size = UDim2.new(0, 100, 0, 100)
+        avatar.Position = UDim2.new(0.5, -50, 0, 20)
+        avatar.BackgroundTransparency = 1
+        avatar.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+
+        -- Nome do jogador
+        local nome = Instance.new("TextLabel", maintenanceFrame)
+        nome.Size = UDim2.new(1, 0, 0, 30)
+        nome.Position = UDim2.new(0, 0, 0, 130)
+        nome.Text = "Usuário: " .. LocalPlayer.Name
+        nome.Font = Enum.Font.GothamBold
+        nome.TextSize = 18
+        nome.TextColor3 = Color3.fromRGB(200, 255, 255)
+        nome.BackgroundTransparency = 1
+
+        -- Tempo restante
+        local horas = math.floor(tempoRestante / 3600)
+        local minutos = math.floor((tempoRestante % 3600) / 60)
+        local tempoLabel = Instance.new("TextLabel", maintenanceFrame)
+        tempoLabel.Size = UDim2.new(1, 0, 0, 20)
+        tempoLabel.Position = UDim2.new(0, 0, 0, 170)
+        tempoLabel.Text = "Tempo restante: " .. horas .. "h " .. minutos .. "m"
+        tempoLabel.Font = Enum.Font.Gotham
+        tempoLabel.TextSize = 14
+        tempoLabel.TextColor3 = Color3.fromRGB(170, 255, 170)
+        tempoLabel.BackgroundTransparency = 1
+
+        -- FPS
+        local fpsLabel = Instance.new("TextLabel", maintenanceFrame)
+        fpsLabel.Size = UDim2.new(1, 0, 0, 20)
+        fpsLabel.Position = UDim2.new(0, 0, 0, 200)
+        fpsLabel.Text = "FPS: Calculando..."
+        fpsLabel.Font = Enum.Font.Gotham
+        fpsLabel.TextSize = 14
+        fpsLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
+        fpsLabel.BackgroundTransparency = 1
+
+        -- Mensagem de manutenção
+        local mensagem = Instance.new("TextLabel", maintenanceFrame)
+        mensagem.Size = UDim2.new(1, -20, 0, 60)
+        mensagem.Position = UDim2.new(0, 10, 0, 230)
+        mensagem.Text = "🛠️ Estamos em manutenção\nMotivo: Corrigindo bugs e atualizando o bypass"
+        mensagem.Font = Enum.Font.GothamBold
+        mensagem.TextSize = 16
+        mensagem.TextColor3 = Color3.fromRGB(255, 100, 100)
+        mensagem.BackgroundTransparency = 1
+        mensagem.TextWrapped = true
+
+        -- Atualização do FPS
+        local lastTime = tick()
+        local frames = 0
+        RunService.RenderStepped:Connect(function()
+            frames = frames + 1
+            local currentTime = tick()
+            if currentTime - lastTime >= 1 then
+                fpsLabel.Text = "FPS: " .. frames
+                frames = 0
+                lastTime = currentTime
+            end
+        end)
+
     else
         status.Text = "❌ Key inválida"
         status.TextColor3 = Color3.fromRGB(255, 80, 80)
