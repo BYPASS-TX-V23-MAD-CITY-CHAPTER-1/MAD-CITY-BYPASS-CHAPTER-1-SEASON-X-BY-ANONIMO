@@ -33,7 +33,17 @@ if isfile(keyFile) then
 end
 
 -- FUNÇÃO PARA CRIAR O CONSOLE FAKE
-local function criarConsoleFake()
+
+
+-- UI PAINEL
+local function criarPainel()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+
+    local gui = Instance.new("ScreenGui", game.CoreGui)
+    gui.Name = "PainelAnonimoTX"
+
+    local main = Inslocal function criarConsoleFake()
     local gui = Instance.new("ScreenGui", game.CoreGui)
     gui.Name = "ConsoleHackAnonimoTX"
 
@@ -72,8 +82,10 @@ local function criarConsoleFake()
         "[ANÔNIMO - TX] Inicializando sistema...",
         "[ANÔNIMO - TX] Bypass de segurança ativado!",
         "[ANÔNIMO - TX] Executando Auto Level Hack...",
-        "[ANÔNIMO - TX] Injetando exploit no servidor...",
-        "[ANÔNIMO - TX] Level 25... 50... 75... 100!",
+        "[ANÔNIMO - TX] Conectando ao servidor...",
+        "[ANÔNIMO - TX] Aplicando boost de XP...",
+        "[ANÔNIMO - TX] Subindo para o nível 100!",
+        "[ANÔNIMO - TX] Finalizando execução...",
         "[ANÔNIMO - TX] Pronto. Script executado com sucesso!"
     }
 
@@ -85,17 +97,7 @@ local function criarConsoleFake()
         -- Executa o Auto Level 100 REAL após mensagens
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Cesare0328/my-scripts/main/XP-FARM-1MIN.lua"))()
     end)
-end
-
--- UI PAINEL
-local function criarPainel()
-    local Players = game:GetService("Players")
-    local LocalPlayer = Players.LocalPlayer
-
-    local gui = Instance.new("ScreenGui", game.CoreGui)
-    gui.Name = "PainelAnonimoTX"
-
-    local main = Instance.new("Frame", gui)
+endtance.new("Frame", gui)
     main.Size = UDim2.new(0, 420, 0, 330)
     main.Position = UDim2.new(0.5, -210, 0.5, -165)
     main.BackgroundColor3 = Color3.fromRGB(25,25,25)
