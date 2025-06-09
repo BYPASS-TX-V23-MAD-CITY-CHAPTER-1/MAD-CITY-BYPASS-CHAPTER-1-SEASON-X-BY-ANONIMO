@@ -1,140 +1,88 @@
 
--- Script de OtimizaÃ§Ã£o e Funcionalidades para Roblox
+--[[ 
+  ✅ SCRIPT DE OTIMIZAÇÃO + FUNÇÕES EXTRAS
+  🔒 Sistema de Login por Key
+  ⏰ Timer de 120 horas (5 dias)
+  👤 Mostra nome do jogador
+  📦 Desenvolvido por ANÔNIMO - TX
+--]]
 
--- FunÃ§Ã£o de login com Key
-local userKey = "anonimo-tx"
-local sessionTime = 120 -- tempo restante em horas
-local playerName = game.Players.LocalPlayer.Name
-local keyVerified = false
+if not writefile or not readfile then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Erro",
+        Text = "Seu executor não suporta writefile/readfile.",
+        Duration = 10
+    })
+    return
+end
 
--- FunÃ§Ã£o de verificaÃ§Ã£o de Key e exibiÃ§Ã£o do tempo restante
-local function verifyKey()
-    if userKey == "anonimo-tx" then
-        keyVerified = true
-        print("Key Verificada com Sucesso!")
-        print("Tempo restante: " .. sessionTime .. " horas.")
-    else
-        keyVerified = false
-        print("Chave invÃ¡lida.")
+-- CONFIGURAÇÕES DE KEY
+local key_atual = "ANONIMO-TX-KEY"
+local tempo_total_horas = 120
+local keyFile = "keySystemData.txt"
+
+-- Função para calcular tempo restante
+local function calcularTempoRestante(timestamp)
+    local agora = os.time()
+    local tempoUsado = agora - tonumber(timestamp)
+    local tempoRestante = math.max((tempo_total_horas * 3600) - tempoUsado, 0)
+    return tempoRestante
+end
+
+-- Verifica se já tem tempo salvo
+local autorizado = false
+local tempoRestante = tempo_total_horas * 3600
+if isfile(keyFile) then
+    local dados = readfile(keyFile)
+    local partes = string.split(dados, "|")
+    if partes[1] == key_atual then
+        tempoRestante = calcularTempoRestante(partes[2])
+        if tempoRestante > 0 then
+            autorizado = true
+        end
     end
 end
 
-verifyKey()
+-- Tela de login com key
+if not autorizado then
+    local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+    local Frame = Instance.new("Frame", ScreenGui)
+    local TextBox = Instance.new("TextBox", Frame)
+    local Button = Instance.new("TextButton", Frame)
+    local UICorner = Instance.new("UICorner", Frame)
 
--- FunÃ§Ãµes do painel de controle
-local painel = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
-local frame = Instance.new("Frame", painel)
-frame.Size = UDim2.new(0, 300, 0, 500)
-frame.Position = UDim2.new(0, 10, 0, 10)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BorderSizePixel = 0
+    ScreenGui.Name = "LoginKeyGUI"
+    Frame.Size = UDim2.new(0, 250, 0, 120)
+    Frame.Position = UDim2.new(0.5, -125, 0.5, -60)
+    Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    UICorner.CornerRadius = UDim.new(0, 8)
+    UICorner.Parent = Frame
 
--- FunÃ§Ã£o de Auto XP
-local autoXP = Instance.new("TextButton", frame)
-autoXP.Size = UDim2.new(0, 280, 0, 40)
-autoXP.Position = UDim2.new(0, 10, 0, 50)
-autoXP.Text = "Ativar Auto XP"
-autoXP.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-autoXP.TextColor3 = Color3.fromRGB(0, 0, 0)
+    TextBox.Size = UDim2.new(0.8, 0, 0, 35)
+    TextBox.Position = UDim2.new(0.1, 0, 0.2, 0)
+    TextBox.PlaceholderText = "Digite a Key"
+    TextBox.Text = ""
+    TextBox.TextScaled = true
+    TextBox.BackgroundColor3 = Color3.fromRGB(50,50,50)
 
-autoXP.MouseButton1Click:Connect(function()
-    print("ATENÃ‡ÃƒO - AUTO BYPASS ATIVADO USE A OPÃ‡ÃƒO AUTO XP QUE ESTÃ AUTORIZADA - ANÃ”NIMO TX")
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/AdminEvilDRagon/Mad-Lads-V6-Revamp-GUI/refs/heads/main/Mad-Lads%20V6%20Revamp%20GUI", true))()
-end)
+    Button.Size = UDim2.new(0.6, 0, 0, 30)
+    Button.Position = UDim2.new(0.2, 0, 0.65, 0)
+    Button.Text = "Verificar"
+    Button.BackgroundColor3 = Color3.fromRGB(0, 170, 127)
+    Button.TextScaled = true
 
--- FunÃ§Ã£o de Auto ROP
-local autoROP = Instance.new("TextButton", frame)
-autoROP.Size = UDim2.new(0, 280, 0, 40)
-autoROP.Position = UDim2.new(0, 10, 0, 100)
-autoROP.Text = "Ativar Auto ROP"
-autoROP.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-autoROP.TextColor3 = Color3.fromRGB(0, 0, 0)
+    Button.MouseButton1Click:Connect(function()
+        if TextBox.Text == key_atual then
+            writefile(keyFile, key_atual.."|"..tostring(os.time()))
+            ScreenGui:Destroy()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/TXAnonimo/roblox-ultimate/main/full_script.lua"))()
+        else
+            Button.Text = "Key Inválida"
+        end
+    end)
 
-autoROP.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGet(('https://raw.githubusercontent.com/VanPotent/EpicHub/refs/heads/main/my/ar'),true))()
-end)
-
--- FunÃ§Ã£o de Auto Level 100
-local autoLevel100 = Instance.new("TextButton", frame)
-autoLevel100.Size = UDim2.new(0, 280, 0, 40)
-autoLevel100.Position = UDim2.new(0, 10, 0, 150)
-autoLevel100.Text = "Ativar Auto Level 100"
-autoLevel100.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-autoLevel100.TextColor3 = Color3.fromRGB(0, 0, 0)
-
-autoLevel100.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Cesare0328/my-scripts/main/XP-FARM-1MIN.lua"))()
-end)
-
--- FunÃ§Ã£o de OtimizaÃ§Ã£o de GrÃ¡ficos (Modo Minecraft)
-local optimizeGraphics = Instance.new("TextButton", frame)
-optimizeGraphics.Size = UDim2.new(0, 280, 0, 40)
-optimizeGraphics.Position = UDim2.new(0, 10, 0, 200)
-optimizeGraphics.Text = "Modo Potente (Minecraft)"
-optimizeGraphics.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-optimizeGraphics.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-optimizeGraphics.MouseButton1Click:Connect(function()
-    -- Remover texturas e sombras
-    game.Lighting.GlobalShadows = false
-    game.Lighting.FogEnd = 9e9
-    game.Lighting.Ambient = Color3.fromRGB(255, 255, 255)
-    game.Lighting.Brightness = 0
-    game.Lighting.TimeOfDay = "14:00:00"
-end)
-
--- Exibir FPS no topo da tela
-local fpsDisplay = Instance.new("TextLabel", painel)
-fpsDisplay.Size = UDim2.new(0, 100, 0, 30)
-fpsDisplay.Position = UDim2.new(0, 10, 0, 10)
-fpsDisplay.Text = "FPS: "
-fpsDisplay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-fpsDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-local function updateFPS()
-    while true do
-        fpsDisplay.Text = "FPS: " .. tostring(game:GetService("RunService").Heartbeat.FPS)
-        wait(1)
-    end
+    return
 end
 
--- Iniciar contagem de FPS
-updateFPS()
-
--- FunÃ§Ã£o de Reset a cada 3 minutos (loop)
-local function autoReset()
-    while true do
-        wait(180) -- Espera 3 minutos
-        game.Players.LocalPlayer.Character:BreakJoints()
-    end
-end
-
--- Iniciar reset automÃ¡tico
-autoReset()
-
--- Minimizar painel
-local minimizeButton = Instance.new("TextButton", frame)
-minimizeButton.Size = UDim2.new(0, 40, 0, 40)
-minimizeButton.Position = UDim2.new(0, 260, 0, 10)
-minimizeButton.Text = "_"
-minimizeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-minimizeButton.MouseButton1Click:Connect(function()
-    painel.Visible = false
-end)
-
--- Maximizar painel
-local maximizeButton = Instance.new("TextButton", frame)
-maximizeButton.Size = UDim2.new(0, 40, 0, 40)
-maximizeButton.Position = UDim2.new(0, 260, 0, 50)
-maximizeButton.Text = "+"
-maximizeButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-maximizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-maximizeButton.MouseButton1Click:Connect(function()
-    painel.Visible = true
-end)
-
--- Exibir painel
-painel.Enabled = true
+-- Caso autorizado, executar painel completo
+loadstring(game:HttpGet("https://raw.githubusercontent.com/TXAnonimo/roblox-ultimate/main/full_script.lua"))()
