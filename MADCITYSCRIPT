@@ -1,103 +1,389 @@
-local HttpService = game:GetService("HttpService")
+--[[
+  ANÔNIMO TX SCRIPT
+  Versão Simplificada e Otimizada
+]]
 
-local function criarConsoleFake()
-    local gui = Instance.new("ScreenGui", game.CoreGui)
-    gui.Name = "ConsoleHackAnonimoTX"
+-- CONFIGURAÇÃO BÁSICA
+local KEY = "Duck"
+local TEMPO_VALIDADE = 120 -- horas
+local ARQUIVO_KEY = "anonimo_tx_data.txt"
 
-    local frame = Instance.new("Frame", gui)
-    frame.Size = UDim2.new(0.5, 0, 0.4, 0)
-    frame.Position = UDim2.new(0.25, 0, 0.3, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
-    frame.BorderColor3 = Color3.fromRGB(0,255,127)
-
-    local corner = Instance.new("UICorner", frame)
-    corner.CornerRadius = UDim.new(0, 6)
-
-    local label = Instance.new("TextLabel", frame)
-    label.Size = UDim2.new(1, -20, 0, 30)
-    label.Position = UDim2.new(0, 10, 0, 10)
-    label.Text = "👾 CONSOLE ANÔNIMO - TX"
-    label.TextColor3 = Color3.fromRGB(0, 255, 127)
-    label.BackgroundTransparency = 1
-    label.Font = Enum.Font.Code
-    label.TextScaled = true
-
-    local scrollingText = Instance.new("TextLabel", frame)
-    scrollingText.Size = UDim2.new(1, -20, 1, -50)
-    scrollingText.Position = UDim2.new(0, 10, 0, 40)
-    scrollingText.Text = ""
-    scrollingText.TextColor3 = Color3.fromRGB(0, 255, 127)
-    scrollingText.BackgroundTransparency = 1
-    scrollingText.Font = Enum.Font.Code
-    scrollingText.TextXAlignment = Enum.TextXAlignment.Left
-    scrollingText.TextYAlignment = Enum.TextYAlignment.Top
-    scrollingText.TextWrapped = true
-    scrollingText.TextScaled = false
-    scrollingText.TextSize = 14
-
-    local mensagens = {
-        "[ANÔNIMO - TX] Inicializando sistema...",
-        "[ANÔNIMO - TX] Bypass de segurança ativado!",
-        "[ANÔNIMO - TX] Executando Auto Level Hack...",
-        "[ANÔNIMO - TX] Conectando ao servidor...",
-        "[ANÔNIMO - TX] Aplicando boost de XP...",
-        "[ANÔNIMO - TX] Subindo para o nível 100!",
-        "[ANÔNIMO - TX] Finalizando execução...",
-        "[ANÔNIMO - TX] Pronto. Script executado com sucesso!"
-    }
-
-    task.spawn(function()
-        for _, msg in ipairs(mensagens) do
-            scrollingText.Text = scrollingText.Text .. msg .. "\n"
-            wait(1.5)
-        end
-        -- Executa o Auto Level 100 REAL após mensagens
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Cesare0328/my-scripts/main/XP-FARM-1MIN.lua"))()
-    end)
+-- VERIFICA FUNÇÕES ESSENCIAIS
+if not writefile or not readfile then
+    game:GetService("StarterGui"):SetCore("SendNotification",{
+        Title = "ERRO",
+        Text = "Seu executor não suporta writefile/readfile",
+        Duration = 5
+    })
+    return
 end
 
--- Sistema de KEY
-local keyValida = "Duck"
+-- FUNÇÕES UTILITÁRIAS
+local function calcularTempoRestante(timestamp)
+    local tempoDecorrido = os.time() - timestamp
+    return math.max((TEMPO_VALIDADE * 3600) - tempoDecorrido, 0)
+end
 
-local function solicitarKey()
-    local player = game.Players.LocalPlayer
-    local input = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-    input.Name = "KeySystemGui"
+local function criarElemento(tipo, props)
+    local elemento = Instance.new(tipo)
+    for prop, valor in pairs(props) do
+        elemento[prop] = valor
+    end
+    return elemento
+end
 
-    local frame = Instance.new("Frame", input)
-    frame.Size = UDim2.new(0.4, 0, 0.2, 0)
-    frame.Position = UDim2.new(0.3, 0, 0.4, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    frame.BorderColor3 = Color3.fromRGB(0, 255, 127)
-    Instance.new("UICorner", frame)
+-- VERIFICAÇÃO DA KEY
+local autorizado = false
+local tempoRestante = 0
 
-    local textBox = Instance.new("TextBox", frame)
-    textBox.PlaceholderText = "Digite sua Key"
-    textBox.Size = UDim2.new(1, -20, 0.4, 0)
-    textBox.Position = UDim2.new(0, 10, 0.1, 0)
-    textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    textBox.TextColor3 = Color3.new(1,1,1)
-    Instance.new("UICorner", textBox)
+if isfile(ARQUIVO_KEY) then
+    local dados = readfile(ARQUIVO_KEY)
+    local keySalva, timestamp = dados:match("(.+)|(.+)")
+    
+    if keySalva == KEY then
+        tempoRestante = calcularTempoRestante(tonumber(timestamp))
+        autorizado = tempoRestante > 0
+    end
+end
 
-    local botao = Instance.new("TextButton", frame)
-    botao.Size = UDim2.new(0.5, 0, 0.3, 0)
-    botao.Position = UDim2.new(0.25, 0, 0.6, 0)
-    botao.Text = "VERIFICAR"
-    botao.BackgroundColor3 = Color3.fromRGB(0, 255, 127)
-    botao.TextColor3 = Color3.new(0,0,0)
-    Instance.new("UICorner", botao)
+-- TELA DE LOGIN (se não autorizado)
+if not autorizado then
+    local gui = criarElemento("ScreenGui", {
+        Parent = game.CoreGui,
+        Name = "AnonimoTX_Login"
+    })
 
-    botao.MouseButton1Click:Connect(function()
-        if textBox.Text == keyValida then
-            input:Destroy()
-            criarConsoleFake()
+    local frame = criarElemento("Frame", {
+        Parent = gui,
+        Size = UDim2.new(0, 300, 0, 180),
+        Position = UDim2.new(0.5, -150, 0.5, -90),
+        BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+        AnchorPoint = Vector2.new(0.5, 0.5)
+    })
+
+    local UICorner = criarElemento("UICorner", {
+        Parent = frame,
+        CornerRadius = UDim.new(0, 8)
+    })
+
+    local titulo = criarElemento("TextLabel", {
+        Parent = frame,
+        Size = UDim2.new(1, 0, 0, 40),
+        Position = UDim2.new(0, 0, 0, 10),
+        Text = "🔐 ANÔNIMO TX",
+        TextColor3 = Color3.fromRGB(0, 255, 127),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBold,
+        TextSize = 20
+    })
+
+    local input = criarElemento("TextBox", {
+        Parent = frame,
+        Size = UDim2.new(0.8, 0, 0, 40),
+        Position = UDim2.new(0.1, 0, 0.3, 0),
+        PlaceholderText = "Digite a Key",
+        Text = "",
+        TextSize = 16,
+        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+        TextColor3 = Color3.new(1, 1, 1),
+        Font = Enum.Font.Gotham
+    })
+
+    criarElemento("UICorner", {
+        Parent = input,
+        CornerRadius = UDim.new(0, 6)
+    })
+
+    local btn = criarElemento("TextButton", {
+        Parent = frame,
+        Size = UDim2.new(0.6, 0, 0, 40),
+        Position = UDim2.new(0.2, 0, 0.7, 0),
+        Text = "ENTRAR",
+        TextSize = 16,
+        Font = Enum.Font.GothamBold,
+        TextColor3 = Color3.new(1, 1, 1),
+        BackgroundColor3 = Color3.fromRGB(0, 180, 120)
+    })
+
+    criarElemento("UICorner", {
+        Parent = btn,
+        CornerRadius = UDim.new(0, 6)
+    })
+
+    btn.MouseButton1Click:Connect(function()
+        if input.Text == KEY then
+            writefile(ARQUIVO_KEY, KEY.."|"..os.time())
+            gui:Destroy()
+            criarPainelPrincipal()
         else
-            botao.Text = "KEY ERRADA!"
-            wait(1.5)
-            botao.Text = "VERIFICAR"
+            local originalText = btn.Text
+            btn.Text = "KEY ERRADA!"
+            btn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+            wait(1)
+            btn.Text = originalText
+            btn.BackgroundColor3 = Color3.fromRGB(0, 180, 120)
+        end
+    end)
+else
+    criarPainelPrincipal()
+end
+
+-- PAINEL PRINCIPAL
+function criarPainelPrincipal()
+    local gui = criarElemento("ScreenGui", {
+        Parent = game.CoreGui,
+        Name = "AnonimoTX_Main"
+    })
+
+    local mainFrame = criarElemento("Frame", {
+        Parent = gui,
+        Size = UDim2.new(0, 350, 0, 400),
+        Position = UDim2.new(0.5, -175, 0.5, -200),
+        BackgroundColor3 = Color3.fromRGB(25, 25, 25),
+        AnchorPoint = Vector2.new(0.5, 0.5)
+    })
+
+    criarElemento("UICorner", {
+        Parent = mainFrame,
+        CornerRadius = UDim.new(0, 10)
+    })
+
+    local header = criarElemento("Frame", {
+        Parent = mainFrame,
+        Size = UDim2.new(1, 0, 0, 50),
+        BackgroundColor3 = Color3.fromRGB(0, 120, 80),
+        BorderSizePixel = 0
+    })
+
+    criarElemento("UICorner", {
+        Parent = header,
+        CornerRadius = UDim.new(0, 10, 0, 0)
+    })
+
+    local titulo = criarElemento("TextLabel", {
+        Parent = header,
+        Size = UDim2.new(1, 0, 1, 0),
+        Text = "ANÔNIMO TX | v1.0",
+        TextColor3 = Color3.new(1, 1, 1),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBold,
+        TextSize = 18
+    })
+
+    local closeBtn = criarElemento("TextButton", {
+        Parent = header,
+        Size = UDim2.new(0, 30, 0, 30),
+        Position = UDim2.new(1, -35, 0.5, -15),
+        Text = "X",
+        TextColor3 = Color3.new(1, 1, 1),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBold,
+        TextSize = 18
+    })
+
+    closeBtn.MouseButton1Click:Connect(function()
+        gui:Destroy()
+    end)
+
+    local content = criarElemento("Frame", {
+        Parent = mainFrame,
+        Size = UDim2.new(1, -20, 1, -120),
+        Position = UDim2.new(0, 10, 0, 60),
+        BackgroundTransparency = 1
+    })
+
+    local function criarBotao(texto, callback)
+        local btn = criarElemento("TextButton", {
+            Parent = content,
+            Size = UDim2.new(1, 0, 0, 45),
+            Position = UDim2.new(0, 0, 0, #content:GetChildren() * 50),
+            Text = texto,
+            TextColor3 = Color3.new(1, 1, 1),
+            BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+            Font = Enum.Font.Gotham,
+            TextSize = 16
+        })
+
+        criarElemento("UICorner", {
+            Parent = btn,
+            CornerRadius = UDim.new(0, 6)
+        })
+
+        btn.MouseButton1Click:Connect(callback)
+        return btn
+    end
+
+    -- BOTÕES PRINCIPAIS
+    criarBotao("⚡ AUTO LEVEL 100", function()
+        local consoleGui = criarElemento("ScreenGui", {
+            Parent = game.CoreGui,
+            Name = "AnonimoTX_Console"
+        })
+
+        local consoleFrame = criarElemento("Frame", {
+            Parent = consoleGui,
+            Size = UDim2.new(0, 400, 0, 250),
+            Position = UDim2.new(0.5, -200, 0.7, -125),
+            BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        })
+
+        criarElemento("UICorner", {
+            Parent = consoleFrame,
+            CornerRadius = UDim.new(0, 8)
+        })
+
+        local consoleHeader = criarElemento("Frame", {
+            Parent = consoleFrame,
+            Size = UDim2.new(1, 0, 0, 30),
+            BackgroundColor3 = Color3.fromRGB(0, 120, 80),
+            BorderSizePixel = 0
+        })
+
+        criarElemento("UICorner", {
+            Parent = consoleHeader,
+            CornerRadius = UDim.new(0, 8, 0, 0)
+        })
+
+        local consoleTitle = criarElemento("TextLabel", {
+            Parent = consoleHeader,
+            Size = UDim2.new(1, 0, 1, 0),
+            Text = "CONSOLE ANÔNIMO TX",
+            TextColor3 = Color3.new(1, 1, 1),
+            BackgroundTransparency = 1,
+            Font = Enum.Font.GothamBold,
+            TextSize = 14
+        })
+
+        local consoleClose = criarElemento("TextButton", {
+            Parent = consoleHeader,
+            Size = UDim2.new(0, 25, 0, 25),
+            Position = UDim2.new(1, -30, 0.5, -12.5),
+            Text = "X",
+            TextColor3 = Color3.new(1, 1, 1),
+            BackgroundTransparency = 1,
+            Font = Enum.Font.GothamBold,
+            TextSize = 16
+        })
+
+        consoleClose.MouseButton1Click:Connect(function()
+            consoleGui:Destroy()
+        end)
+
+        local consoleContent = criarElemento("ScrollingFrame", {
+            Parent = consoleFrame,
+            Size = UDim2.new(1, -10, 1, -40),
+            Position = UDim2.new(0, 5, 0, 35),
+            BackgroundTransparency = 1,
+            ScrollBarThickness = 5,
+            CanvasSize = UDim2.new(0, 0, 2, 0)
+        })
+
+        local layout = criarElemento("UIListLayout", {
+            Parent = consoleContent,
+            Padding = UDim.new(0, 5)
+        })
+
+        local function log(mensagem)
+            local label = criarElemento("TextLabel", {
+                Parent = consoleContent,
+                Size = UDim2.new(1, 0, 0, 20),
+                Text = "> "..mensagem,
+                TextColor3 = Color3.fromRGB(0, 255, 127),
+                BackgroundTransparency = 1,
+                Font = Enum.Font.Code,
+                TextSize = 14,
+                TextXAlignment = Enum.TextXAlignment.Left
+            })
+            
+            -- Auto-scroll
+            wait()
+            consoleContent.CanvasPosition = Vector2.new(0, consoleContent.CanvasPosition.Y + 25)
+        end
+
+        -- Simula um console real
+        task.spawn(function()
+            log("Iniciando sistema...")
+            wait(0.5)
+            log("Verificando permissões...")
+            wait(0.5)
+            log("Bypassando anti-cheat...")
+            wait(1)
+            log("Conectando ao servidor...")
+            wait(0.5)
+            log("Injetando código...")
+            wait(1)
+            log("Level hack ativado!")
+            
+            -- Executa o script real após o "fake console"
+            wait(1)
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/Cesare0328/my-scripts/main/XP-FARM-1MIN.lua"))()
+        end)
+    end)
+
+    criarBotao("💰 AUTO FARM ROP", function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/VanPotent/EpicHub/refs/heads/main/my/ar", true))()
+    end)
+
+    criarBotao("🧼 OTIMIZAR JOGO", function()
+        for _, obj in ipairs(game:GetDescendants()) do
+            if obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") or obj:IsA("Trail") then
+                obj:Destroy()
+            elseif obj:IsA("BasePart") then
+                obj.Material = Enum.Material.Plastic
+                obj.Reflectance = 0
+            end
+        end
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        game:GetService("StarterGui"):SetCore("SendNotification",{
+            Title = "OTIMIZAÇÃO",
+            Text = "Jogo otimizado com sucesso!",
+            Duration = 3
+        })
+    end)
+
+    -- FOOTER COM INFORMAÇÕES
+    local footer = criarElemento("Frame", {
+        Parent = mainFrame,
+        Size = UDim2.new(1, -20, 0, 50),
+        Position = UDim2.new(0, 10, 1, -60),
+        BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    })
+
+    criarElemento("UICorner", {
+        Parent = footer,
+        CornerRadius = UDim.new(0, 8)
+    })
+
+    local playerLabel = criarElemento("TextLabel", {
+        Parent = footer,
+        Size = UDim2.new(1, 0, 0, 20),
+        Position = UDim2.new(0, 10, 0, 5),
+        Text = "👤 "..game.Players.LocalPlayer.Name,
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Gotham,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+
+    local timeLabel = criarElemento("TextLabel", {
+        Parent = footer,
+        Size = UDim2.new(1, 0, 0, 20),
+        Position = UDim2.new(0, 10, 0, 25),
+        Text = "⏳ Tempo restante: "..math.floor(tempoRestante/3600).."h",
+        TextColor3 = Color3.fromRGB(200, 200, 200),
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Gotham,
+        TextSize = 14,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+
+    -- Atualiza o tempo restante
+    task.spawn(function()
+        while true do
+            wait(1)
+            tempoRestante = tempoRestante - 1
+            timeLabel.Text = "⏳ Tempo restante: "..math.floor(tempoRestante/3600).."h"
         end
     end)
 end
-
--- Iniciar tudo
-solicitarKey()
