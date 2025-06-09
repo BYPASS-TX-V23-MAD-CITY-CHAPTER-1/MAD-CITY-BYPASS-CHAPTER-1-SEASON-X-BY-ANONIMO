@@ -1,330 +1,104 @@
---[[
-  ANÔNIMO TX SCRIPT
-  Versão Simplificada e Otimizada
+--[[ 
+✅ SCRIPT COMPLETO ANÔNIMO - TX
+🔐 Login por Key | ⏰ 120h | ⚙️ Auto XP/Rop/Level | 🧼 Otimização extrema | 🔄 Auto Reset
 ]]
 
--- CONFIGURAÇÃO BÁSICA
-local KEY = "Duck"
-local TEMPO_VALIDADE = 120 -- horas
-local ARQUIVO_KEY = "anonimo_tx_data.txt"
+-- CONFIGURAÇÕES
+local key_atual = "Duck"
+local tempo_total_horas = 120
+local keyFile = "anonimo_tx_keydata.txt"
 
--- VERIFICA FUNÇÕES ESSENCIAIS
 if not writefile or not readfile then
-    game:GetService("StarterGui"):SetCore("SendNotification",{
-        Title = "ERRO",
-        Text = "Seu executor não suporta writefile/readfile",
-        Duration = 5
-    })
+    warn("Executor não suporta writefile/readfile.")
     return
 end
 
--- FUNÇÕES UTILITÁRIAS
 local function calcularTempoRestante(timestamp)
-    local tempoDecorrido = os.time() - timestamp
-    return math.max((TEMPO_VALIDADE * 3600) - tempoDecorrido, 0)
+    local agora = os.time()
+    local tempoUsado = agora - tonumber(timestamp)
+    return math.max((tempo_total_horas * 3600) - tempoUsado, 0)
 end
 
-local function criarElemento(tipo, props)
-    local elemento = Instance.new(tipo)
-    for prop, valor in pairs(props) do
-        elemento[prop] = valor
-    end
-    return elemento
-end
-
--- VERIFICAÇÃO DA KEY
-local autorizado = false
-local tempoRestante = 0
-
-if isfile(ARQUIVO_KEY) then
-    local dados = readfile(ARQUIVO_KEY)
-    local keySalva, timestamp = dados:match("(.+)|(.+)")
-    
-    if keySalva == KEY then
-        tempoRestante = calcularTempoRestante(tonumber(timestamp))
-        autorizado = tempoRestante > 0
-    end
-end
-
--- TELA DE LOGIN (se não autorizado)
-if not autorizado then
-    local gui = criarElemento("ScreenGui", {
-        Parent = game.CoreGui,
-        Name = "AnonimoTX_Login"
-    })
-
-    local frame = criarElemento("Frame", {
-        Parent = gui,
-        Size = UDim2.new(0, 300, 0, 180),
-        Position = UDim2.new(0.5, -150, 0.5, -90),
-        BackgroundColor3 = Color3.fromRGB(30, 30, 30),
-        AnchorPoint = Vector2.new(0.5, 0.5)
-    })
-
-    local UICorner = criarElemento("UICorner", {
-        Parent = frame,
-        CornerRadius = UDim.new(0, 8)
-    })
-
-    local titulo = criarElemento("TextLabel", {
-        Parent = frame,
-        Size = UDim2.new(1, 0, 0, 40),
-        Position = UDim2.new(0, 0, 0, 10),
-        Text = "🔐 ANÔNIMO TX",
-        TextColor3 = Color3.fromRGB(0, 255, 127),
-        BackgroundTransparency = 1,
-        Font = Enum.Font.GothamBold,
-        TextSize = 20
-    })
-
-    local input = criarElemento("TextBox", {
-        Parent = frame,
-        Size = UDim2.new(0.8, 0, 0, 40),
-        Position = UDim2.new(0.1, 0, 0.3, 0),
-        PlaceholderText = "Digite a Key",
-        Text = "",
-        TextSize = 16,
-        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
-        TextColor3 = Color3.new(1, 1, 1),
-        Font = Enum.Font.Gotham
-    })
-
-    criarElemento("UICorner", {
-        Parent = input,
-        CornerRadius = UDim.new(0, 6)
-    })
-
-    local btn = criarElemento("TextButton", {
-        Parent = frame,
-        Size = UDim2.new(0.6, 0, 0, 40),
-        Position = UDim2.new(0.2, 0, 0.7, 0),
-        Text = "ENTRAR",
-        TextSize = 16,
-        Font = Enum.Font.GothamBold,
-        TextColor3 = Color3.new(1, 1, 1),
-        BackgroundColor3 = Color3.fromRGB(0, 180, 120)
-    })
-
-    criarElemento("UICorner", {
-        Parent = btn,
-        CornerRadius = UDim.new(0, 6)
-    })
-
-    btn.MouseButton1Click:Connect(function()
-        if input.Text == KEY then
-            writefile(ARQUIVO_KEY, KEY.."|"..os.time())
-            gui:Destroy()
-            criarPainelPrincipal()
-        else
-            local originalText = btn.Text
-            btn.Text = "KEY ERRADA!"
-            btn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-            wait(1)
-            btn.Text = originalText
-            btn.BackgroundColor3 = Color3.fromRGB(0, 180, 120)
+local autorizado, tempoRestante = false, tempo_total_horas * 3600
+if isfile(keyFile) then
+    local dados = readfile(keyFile)
+    local partes = string.split(dados, "|")
+    if partes[1] == key_atual then
+        tempoRestante = calcularTempoRestante(partes[2])
+        if tempoRestante > 0 then
+            autorizado = true
         end
-    end)
-else
-    criarPainelPrincipal()
+    end
 end
 
--- PAINEL PRINCIPAL
-function criarPainelPrincipal()
-    local gui = criarElemento("ScreenGui", {
-        Parent = game.CoreGui,
-        Name = "AnonimoTX_Main"
-    })
+-- UI de Login com Painel Integrado
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
-    local mainFrame = criarElemento("Frame", {
-        Parent = gui,
-        Size = UDim2.new(0, 350, 0, 400),
-        Position = UDim2.new(0.5, -175, 0.5, -200),
-        BackgroundColor3 = Color3.fromRGB(25, 25, 25),
-        AnchorPoint = Vector2.new(0.5, 0.5)
-    })
+local function criarPainel()
+    local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+    ScreenGui.Name = "PainelAnonimoTX"
 
-    criarElemento("UICorner", {
-        Parent = mainFrame,
-        CornerRadius = UDim.new(0, 10)
-    })
+    local Main = Instance.new("Frame", ScreenGui)
+    Main.Size = UDim2.new(0, 400, 0, 300)
+    Main.Position = UDim2.new(0.5, -200, 0.5, -150)
+    Main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    Main.BorderSizePixel = 0
 
-    local header = criarElemento("Frame", {
-        Parent = mainFrame,
-        Size = UDim2.new(1, 0, 0, 50),
-        BackgroundColor3 = Color3.fromRGB(0, 120, 80),
-        BorderSizePixel = 0
-    })
+    local UICorner = Instance.new("UICorner", Main)
+    UICorner.CornerRadius = UDim.new(0, 8)
 
-    criarElemento("UICorner", {
-        Parent = header,
-        CornerRadius = UDim.new(0, 10, 0, 0)
-    })
+    local UIList = Instance.new("UIListLayout", Main)
+    UIList.Padding = UDim.new(0, 8)
 
-    local titulo = criarElemento("TextLabel", {
-        Parent = header,
-        Size = UDim2.new(1, 0, 1, 0),
-        Text = "ANÔNIMO TX | v1.0",
-        TextColor3 = Color3.new(1, 1, 1),
-        BackgroundTransparency = 1,
-        Font = Enum.Font.GothamBold,
-        TextSize = 18
-    })
+    local titulo = Instance.new("TextLabel", Main)
+    titulo.Size = UDim2.new(1, 0, 0, 40)
+    titulo.Text = "🛠️ PAINEL ANÔNIMO - TX"
+    titulo.TextColor3 = Color3.new(1,1,1)
+    titulo.BackgroundTransparency = 1
+    titulo.Font = Enum.Font.GothamBold
+    titulo.TextScaled = true
 
-    local closeBtn = criarElemento("TextButton", {
-        Parent = header,
-        Size = UDim2.new(0, 30, 0, 30),
-        Position = UDim2.new(1, -35, 0.5, -15),
-        Text = "X",
-        TextColor3 = Color3.new(1, 1, 1),
-        BackgroundTransparency = 1,
-        Font = Enum.Font.GothamBold,
-        TextSize = 18
-    })
-
-    closeBtn.MouseButton1Click:Connect(function()
-        gui:Destroy()
-    end)
-
-    local content = criarElemento("Frame", {
-        Parent = mainFrame,
-        Size = UDim2.new(1, -20, 1, -120),
-        Position = UDim2.new(0, 10, 0, 60),
-        BackgroundTransparency = 1
-    })
-
-    local function criarBotao(texto, callback)
-        local btn = criarElemento("TextButton", {
-            Parent = content,
-            Size = UDim2.new(1, 0, 0, 45),
-            Position = UDim2.new(0, 0, 0, #content:GetChildren() * 50),
-            Text = texto,
-            TextColor3 = Color3.new(1, 1, 1),
-            BackgroundColor3 = Color3.fromRGB(40, 40, 40),
-            Font = Enum.Font.Gotham,
-            TextSize = 16
-        })
-
-        criarElemento("UICorner", {
-            Parent = btn,
-            CornerRadius = UDim.new(0, 6)
-        })
-
+    local function criarBotao(txt, callback)
+        local btn = Instance.new("TextButton", Main)
+        btn.Size = UDim2.new(1, -20, 0, 40)
+        btn.Position = UDim2.new(0, 10, 0, 0)
+        btn.Text = txt
+        btn.Font = Enum.Font.Gotham
+        btn.TextScaled = true
+        btn.BackgroundColor3 = Color3.fromRGB(0, 170, 127)
+        btn.TextColor3 = Color3.new(1,1,1)
         btn.MouseButton1Click:Connect(callback)
-        return btn
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     end
 
-    -- BOTÕES PRINCIPAIS
+    -- BOTÕES DO PAINEL
+    criarBotao("🎯 AUTO XP", function()
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "ANÔNIMO - TX",
+            Text = "ATENÇÃO - AUTO BYPASS ATIVADO. USE A OPÇÃO AUTO XP!",
+            Duration = 10
+        })
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/AdminEvilDRagon/Mad-Lads-V6-Revamp-GUI/refs/heads/main/Mad-Lads%20V6%20Revamp%20GUI", true))()
+        
+        task.spawn(function() -- AUTO RESET
+            while true do
+                wait(180)
+                LocalPlayer:LoadCharacter()
+                print("Auto Reset Executado [3 min]")
+            end
+        end)
+    end)
+
+    criarBotao("💰 AUTO ROP", function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/VanPotent/EpicHub/refs/heads/main/my/ar'),true))()
+    end)
+
     criarBotao("⚡ AUTO LEVEL 100", function()
-        local consoleGui = criarElemento("ScreenGui", {
-            Parent = game.CoreGui,
-            Name = "AnonimoTX_Console"
-        })
-
-        local consoleFrame = criarElemento("Frame", {
-            Parent = consoleGui,
-            Size = UDim2.new(0, 400, 0, 250),
-            Position = UDim2.new(0.5, -200, 0.7, -125),
-            BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        })
-
-        criarElemento("UICorner", {
-            Parent = consoleFrame,
-            CornerRadius = UDim.new(0, 8)
-        })
-
-        local consoleHeader = criarElemento("Frame", {
-            Parent = consoleFrame,
-            Size = UDim2.new(1, 0, 0, 30),
-            BackgroundColor3 = Color3.fromRGB(0, 120, 80),
-            BorderSizePixel = 0
-        })
-
-        criarElemento("UICorner", {
-            Parent = consoleHeader,
-            CornerRadius = UDim.new(0, 8, 0, 0)
-        })
-
-        local consoleTitle = criarElemento("TextLabel", {
-            Parent = consoleHeader,
-            Size = UDim2.new(1, 0, 1, 0),
-            Text = "CONSOLE ANÔNIMO TX",
-            TextColor3 = Color3.new(1, 1, 1),
-            BackgroundTransparency = 1,
-            Font = Enum.Font.GothamBold,
-            TextSize = 14
-        })
-
-        local consoleClose = criarElemento("TextButton", {
-            Parent = consoleHeader,
-            Size = UDim2.new(0, 25, 0, 25),
-            Position = UDim2.new(1, -30, 0.5, -12.5),
-            Text = "X",
-            TextColor3 = Color3.new(1, 1, 1),
-            BackgroundTransparency = 1,
-            Font = Enum.Font.GothamBold,
-            TextSize = 16
-        })
-
-        consoleClose.MouseButton1Click:Connect(function()
-            consoleGui:Destroy()
-        end)
-
-        local consoleContent = criarElemento("ScrollingFrame", {
-            Parent = consoleFrame,
-            Size = UDim2.new(1, -10, 1, -40),
-            Position = UDim2.new(0, 5, 0, 35),
-            BackgroundTransparency = 1,
-            ScrollBarThickness = 5,
-            CanvasSize = UDim2.new(0, 0, 2, 0)
-        })
-
-        local layout = criarElemento("UIListLayout", {
-            Parent = consoleContent,
-            Padding = UDim.new(0, 5)
-        })
-
-        local function log(mensagem)
-            local label = criarElemento("TextLabel", {
-                Parent = consoleContent,
-                Size = UDim2.new(1, 0, 0, 20),
-                Text = "> "..mensagem,
-                TextColor3 = Color3.fromRGB(0, 255, 127),
-                BackgroundTransparency = 1,
-                Font = Enum.Font.Code,
-                TextSize = 14,
-                TextXAlignment = Enum.TextXAlignment.Left
-            })
-            
-            -- Auto-scroll
-            wait()
-            consoleContent.CanvasPosition = Vector2.new(0, consoleContent.CanvasPosition.Y + 25)
-        end
-
-        -- Simula um console real
-        task.spawn(function()
-            log("Iniciando sistema...")
-            wait(0.5)
-            log("Verificando permissões...")
-            wait(0.5)
-            log("Bypassando anti-cheat...")
-            wait(1)
-            log("Conectando ao servidor...")
-            wait(0.5)
-            log("Injetando código...")
-            wait(1)
-            log("Level hack ativado!")
-            
-            -- Executa o script real após o "fake console"
-            wait(1)
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/Cesare0328/my-scripts/main/XP-FARM-1MIN.lua"))()
-        end)
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Cesare0328/my-scripts/main/XP-FARM-1MIN.lua"))()
     end)
 
-    criarBotao("💰 AUTO FARM ROP", function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/VanPotent/EpicHub/refs/heads/main/my/ar", true))()
-    end)
-
-    criarBotao("🧼 OTIMIZAR JOGO", function()
+    criarBotao("🧼 OTIMIZAÇÃO EXTREMA", function()
         for _, obj in ipairs(game:GetDescendants()) do
             if obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") or obj:IsA("Trail") then
                 obj:Destroy()
@@ -334,56 +108,71 @@ function criarPainelPrincipal()
             end
         end
         settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-        game:GetService("StarterGui"):SetCore("SendNotification",{
-            Title = "OTIMIZAÇÃO",
-            Text = "Jogo otimizado com sucesso!",
-            Duration = 3
-        })
+        settings().Rendering.TextureQuality = Enum.TextureQuality.Low
+        game.Lighting.GlobalShadows = false
+        print("Modo Gráfico Feio ativado.")
     end)
 
-    -- FOOTER COM INFORMAÇÕES
-    local footer = criarElemento("Frame", {
-        Parent = mainFrame,
-        Size = UDim2.new(1, -20, 0, 50),
-        Position = UDim2.new(0, 10, 1, -60),
-        BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    })
+    local nome = Instance.new("TextLabel", Main)
+    nome.Size = UDim2.new(1, 0, 0, 30)
+    nome.Text = "👤 Jogador: " .. LocalPlayer.Name
+    nome.TextColor3 = Color3.fromRGB(200, 200, 200)
+    nome.BackgroundTransparency = 1
+    nome.Font = Enum.Font.Gotham
+    nome.TextScaled = true
 
-    criarElemento("UICorner", {
-        Parent = footer,
-        CornerRadius = UDim.new(0, 8)
-    })
+    local tempo = Instance.new("TextLabel", Main)
+    tempo.Size = UDim2.new(1, 0, 0, 30)
+    tempo.TextColor3 = Color3.fromRGB(200, 200, 200)
+    tempo.BackgroundTransparency = 1
+    tempo.Font = Enum.Font.Gotham
+    tempo.TextScaled = true
 
-    local playerLabel = criarElemento("TextLabel", {
-        Parent = footer,
-        Size = UDim2.new(1, 0, 0, 20),
-        Position = UDim2.new(0, 10, 0, 5),
-        Text = "👤 "..game.Players.LocalPlayer.Name,
-        TextColor3 = Color3.fromRGB(200, 200, 200),
-        BackgroundTransparency = 1,
-        Font = Enum.Font.Gotham,
-        TextSize = 14,
-        TextXAlignment = Enum.TextXAlignment.Left
-    })
-
-    local timeLabel = criarElemento("TextLabel", {
-        Parent = footer,
-        Size = UDim2.new(1, 0, 0, 20),
-        Position = UDim2.new(0, 10, 0, 25),
-        Text = "⏳ Tempo restante: "..math.floor(tempoRestante/3600).."h",
-        TextColor3 = Color3.fromRGB(200, 200, 200),
-        BackgroundTransparency = 1,
-        Font = Enum.Font.Gotham,
-        TextSize = 14,
-        TextXAlignment = Enum.TextXAlignment.Left
-    })
-
-    -- Atualiza o tempo restante
     task.spawn(function()
         while true do
             wait(1)
-            tempoRestante = tempoRestante - 1
-            timeLabel.Text = "⏳ Tempo restante: "..math.floor(tempoRestante/3600).."h"
+            local restante = math.floor(tempoRestante / 3600)
+            tempo.Text = "⏳ Key válida por " .. restante .. "h"
+            tempoRestante -= 1
         end
     end)
+end
+
+if not autorizado then
+    -- LOGIN
+    local gui = Instance.new("ScreenGui", game.CoreGui)
+    gui.Name = "LoginAnonimoTX"
+
+    local frame = Instance.new("Frame", gui)
+    frame.Size = UDim2.new(0, 250, 0, 120)
+    frame.Position = UDim2.new(0.5, -125, 0.5, -60)
+    frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+
+    local box = Instance.new("TextBox", frame)
+    box.Size = UDim2.new(0.8, 0, 0, 35)
+    box.Position = UDim2.new(0.1, 0, 0.2, 0)
+    box.PlaceholderText = "Digite a Key"
+    box.Text = ""
+    box.TextScaled = true
+    box.BackgroundColor3 = Color3.fromRGB(50,50,50)
+
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(0.6, 0, 0, 30)
+    btn.Position = UDim2.new(0.2, 0, 0.65, 0)
+    btn.Text = "Verificar"
+    btn.BackgroundColor3 = Color3.fromRGB(0, 170, 127)
+    btn.TextScaled = true
+
+    btn.MouseButton1Click:Connect(function()
+        if box.Text == key_atual then
+            writefile(keyFile, key_atual.."|"..tostring(os.time()))
+            gui:Destroy()
+            criarPainel()
+        else
+            btn.Text = "Key Incorreta"
+        end
+    end)
+else
+    criarPainel()
 end
