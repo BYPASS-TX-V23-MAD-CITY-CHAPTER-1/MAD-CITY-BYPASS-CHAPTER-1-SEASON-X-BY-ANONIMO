@@ -1,1 +1,223 @@
+--[[ 
+✅ SCRIPT COMPLETO ANÔNIMO - TX
+🔐 Login por Key | ⏰ 120h | ⚙️ Auto Level 100 com Console Hack | 🧼 Otimização extrema | 🔄 Auto Reset
+🔗 Créditos: ANÔNIMO - TX
+]]
 
+-- CONFIGURAÇÕES
+local key_atual = "Duck"
+local tempo_total_horas = 120
+local keyFile = "anonimo_tx_keydata.txt"
+
+if not writefile or not readfile then
+    warn("Executor não suporta writefile/readfile.")
+    return
+end
+
+local function calcularTempoRestante(timestamp)
+    local agora = os.time()
+    local tempoUsado = agora - tonumber(timestamp)
+    return math.max((tempo_total_horas * 3600) - tempoUsado, 0)
+end
+
+local autorizado, tempoRestante = false, tempo_total_horas * 3600
+if isfile(keyFile) then
+    local dados = readfile(keyFile)
+    local partes = string.split(dados, "|")
+    if partes[1] == key_atual then
+        tempoRestante = calcularTempoRestante(partes[2])
+        if tempoRestante > 0 then
+            autorizado = true
+        end
+    end
+end
+
+-- FUNÇÃO PARA CRIAR O CONSOLE FAKE
+local function criarConsoleFake()
+    local gui = Instance.new("ScreenGui", game.CoreGui)
+    gui.Name = "ConsoleHackAnonimoTX"
+
+    local frame = Instance.new("Frame", gui)
+    frame.Size = UDim2.new(0.5, 0, 0.4, 0)
+    frame.Position = UDim2.new(0.25, 0, 0.3, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+    frame.BorderColor3 = Color3.fromRGB(0,255,127)
+
+    local corner = Instance.new("UICorner", frame)
+    corner.CornerRadius = UDim.new(0, 6)
+
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(1, -20, 0, 30)
+    label.Position = UDim2.new(0, 10, 0, 10)
+    label.Text = "👾 CONSOLE ANÔNIMO - TX"
+    label.TextColor3 = Color3.fromRGB(0, 255, 127)
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.Code
+    label.TextScaled = true
+
+    local scrollingText = Instance.new("TextLabel", frame)
+    scrollingText.Size = UDim2.new(1, -20, 1, -50)
+    scrollingText.Position = UDim2.new(0, 10, 0, 40)
+    scrollingText.Text = ""
+    scrollingText.TextColor3 = Color3.fromRGB(0, 255, 127)
+    scrollingText.BackgroundTransparency = 1
+    scrollingText.Font = Enum.Font.Code
+    scrollingText.TextXAlignment = Enum.TextXAlignment.Left
+    scrollingText.TextYAlignment = Enum.TextYAlignment.Top
+    scrollingText.TextWrapped = true
+    scrollingText.TextScaled = false
+    scrollingText.TextSize = 14
+
+    local mensagens = {
+        "[ANÔNIMO - TX] Inicializando sistema...",
+        "[ANÔNIMO - TX] Bypass de segurança ativado!",
+        "[ANÔNIMO - TX] Executando Auto Level Hack...",
+        "[ANÔNIMO - TX] Injetando exploit no servidor...",
+        "[ANÔNIMO - TX] Level 25... 50... 75... 100!",
+        "[ANÔNIMO - TX] Pronto. Script executado com sucesso!"
+    }
+
+    task.spawn(function()
+        for _, msg in ipairs(mensagens) do
+            scrollingText.Text = scrollingText.Text .. msg .. "\n"
+            wait(1.5)
+        end
+        -- Executa o Auto Level 100 REAL após mensagens
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Cesare0328/my-scripts/main/XP-FARM-1MIN.lua"))()
+    end)
+end
+
+-- UI PAINEL
+local function criarPainel()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+
+    local gui = Instance.new("ScreenGui", game.CoreGui)
+    gui.Name = "PainelAnonimoTX"
+
+    local main = Instance.new("Frame", gui)
+    main.Size = UDim2.new(0, 420, 0, 330)
+    main.Position = UDim2.new(0.5, -210, 0.5, -165)
+    main.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
+
+    local titulo = Instance.new("TextLabel", main)
+    titulo.Size = UDim2.new(1, 0, 0, 40)
+    titulo.Text = "👾 PAINEL ANÔNIMO - TX"
+    titulo.TextColor3 = Color3.fromRGB(0,255,127)
+    titulo.BackgroundTransparency = 1
+    titulo.Font = Enum.Font.GothamBold
+    titulo.TextScaled = true
+
+    local function criarBotao(txt, callback)
+        local btn = Instance.new("TextButton", main)
+        btn.Size = UDim2.new(0.9, 0, 0, 40)
+        btn.Position = UDim2.new(0.05, 0, 0, #main:GetChildren() * 45)
+        btn.Text = txt
+        btn.Font = Enum.Font.Gotham
+        btn.TextScaled = true
+        btn.BackgroundColor3 = Color3.fromRGB(0, 170, 127)
+        btn.TextColor3 = Color3.new(1,1,1)
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+        btn.MouseButton1Click:Connect(callback)
+    end
+
+    criarBotao("⚡ AUTO LEVEL 100", function()
+        criarConsoleFake()
+    end)
+
+    criarBotao("💰 AUTO ROP", function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/VanPotent/EpicHub/refs/heads/main/my/ar", true))()
+    end)
+
+    criarBotao("🧼 OTIMIZAÇÃO EXTREMA", function()
+        for _, obj in ipairs(game:GetDescendants()) do
+            if obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") or obj:IsA("Trail") then
+                obj:Destroy()
+            elseif obj:IsA("BasePart") then
+                obj.Material = Enum.Material.Plastic
+                obj.Reflectance = 0
+            end
+        end
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        settings().Rendering.TextureQuality = Enum.TextureQuality.Low
+        game.Lighting.GlobalShadows = false
+    end)
+
+    local nome = Instance.new("TextLabel", main)
+    nome.Size = UDim2.new(1, 0, 0, 25)
+    nome.Position = UDim2.new(0, 0, 1, -55)
+    nome.Text = "👤 Jogador: " .. LocalPlayer.Name
+    nome.TextColor3 = Color3.fromRGB(150, 255, 150)
+    nome.BackgroundTransparency = 1
+    nome.Font = Enum.Font.Gotham
+    nome.TextScaled = true
+
+    local tempo = Instance.new("TextLabel", main)
+    tempo.Size = UDim2.new(1, 0, 0, 25)
+    tempo.Position = UDim2.new(0, 0, 1, -30)
+    tempo.TextColor3 = Color3.fromRGB(150, 255, 150)
+    tempo.BackgroundTransparency = 1
+    tempo.Font = Enum.Font.Gotham
+    tempo.TextScaled = true
+
+    task.spawn(function()
+        while true do
+            wait(1)
+            local restante = math.floor(tempoRestante / 3600)
+            tempo.Text = "⏳ Key válida por " .. restante .. "h"
+            tempoRestante -= 1
+        end
+    end)
+end
+
+-- TELA DE LOGIN
+if not autorizado then
+    local gui = Instance.new("ScreenGui", game.CoreGui)
+    gui.Name = "LoginAnonimoTX"
+
+    local frame = Instance.new("Frame", gui)
+    frame.Size = UDim2.new(0, 260, 0, 140)
+    frame.Position = UDim2.new(0.5, -130, 0.5, -70)
+    frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+
+    local titulo = Instance.new("TextLabel", frame)
+    titulo.Size = UDim2.new(1, 0, 0, 30)
+    titulo.Text = "🔐 ANÔNIMO - TX"
+    titulo.TextColor3 = Color3.fromRGB(0, 255, 127)
+    titulo.BackgroundTransparency = 1
+    titulo.Font = Enum.Font.GothamBold
+    titulo.TextScaled = true
+
+    local box = Instance.new("TextBox", frame)
+    box.Size = UDim2.new(0.8, 0, 0, 35)
+    box.Position = UDim2.new(0.1, 0, 0.4, 0)
+    box.PlaceholderText = "Digite a Key (Duck)"
+    box.Text = ""
+    box.TextScaled = true
+    box.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    box.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 6)
+
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(0.6, 0, 0, 30)
+    btn.Position = UDim2.new(0.2, 0, 0.75, 0)
+    btn.Text = "Entrar"
+    btn.BackgroundColor3 = Color3.fromRGB(0, 170, 127)
+    btn.TextScaled = true
+    btn.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+    btn.MouseButton1Click:Connect(function()
+        if box.Text == key_atual then
+            writefile(keyFile, key_atual.."|"..tostring(os.time()))
+            gui:Destroy()
+            criarPainel()
+        else
+            btn.Text = "Key Incorreta"
+        end
+    end)
+else
+    criarPainel()
+end
