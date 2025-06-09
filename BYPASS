@@ -1,1 +1,469 @@
-CHAPTER-1-.EXE./LINK
+-- Configuração básica
+local keyCorreta = "Duck" -- Substitua por validação remota futuramente
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Função para criar elementos UI com estilo
+local function criarElemento(tipo, props)
+    local elemento = Instance.new(tipo)
+    for prop, valor in pairs(props) do
+        elemento[prop] = valor
+    end
+    return elemento
+end
+
+-- Função para criar sombra leve
+local function criarSombra(pai)
+    local shadow = criarElemento("ImageLabel", {
+        Parent = pai,
+        Size = UDim2.new(1, 8, 1, 8),
+        Position = UDim2.new(0, -4, 0, -4),
+        Image = "rbxassetid://1316045217",
+        ImageColor3 = Color3.fromRGB(0, 0, 0),
+        ImageTransparency = 0.85,
+        ScaleType = Enum.ScaleType.Slice,
+        SliceCenter = Rect.new(10, 10, 118, 118),
+        BackgroundTransparency = 1,
+        ZIndex = -1
+    })
+    return shadow
+end
+
+-- Tela principal
+local gui = criarElemento("ScreenGui", {
+    Name = "TX_Premium_Painel",
+    Parent = game.CoreGui or LocalPlayer.PlayerGui,
+    ResetOnSpawn = false,
+    IgnoreGuiInset = true
+})
+
+-- Frame principal (responsivo)
+local mainFrame = criarElemento("Frame", {
+    Parent = gui,
+    Size = UDim2.new(0.35, 0, 0.6, 0), -- 35% da largura, 60% da altura
+    Position = UDim2.new(0.5, 0, 0.5, 0),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundColor3 = Color3.fromRGB(20, 25, 40),
+    BorderSizePixel = 0,
+    ClipsDescendants = true
+})
+
+criarSombra(mainFrame)
+criarElemento("UICorner", {Parent = mainFrame, CornerRadius = UDim.new(0, 16)})
+
+-- Função para tornar o frame arrastável
+local function tornarArrastavel(frame, header)
+    local dragging, dragInput, dragStart, startPos
+    header.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    header.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+-- Cabeçalho
+local header = criarElemento("Frame", {
+    Parent = mainFrame,
+    Size = UDim2.new(1, 0, 0, 50),
+    BackgroundColor3 = Color3.fromRGB(30, 35, 50),
+    BorderSizePixel = 0
+})
+
+criarElemento("UICorner", {Parent = header, CornerRadius = UDim.new(0, 16)})
+tornarArrastavel(mainFrame, header)
+
+local titleLabel = criarElemento("TextLabel", {
+    Parent = header,
+    Size = UDim2.new(0.7, 0, 1, 0),
+    Position = UDim2.new(0.1, 0, 0, 0),
+    Text = "TX Premium v8.0",
+    Font = Enum.Font.GothamBlack,
+    TextSize = 20,
+    TextColor3 = Color3.fromRGB(0, 200, 255),
+    BackgroundTransparency = 1
+})
+
+-- Botão minimizar
+local btnMinimizar = criarElemento("TextButton", {
+    Parent = header,
+    Size = UDim2.new(0, 40, 0, 40),
+    Position = UDim2.new(1, -90, 0, 5),
+    Text = "-",
+    Font = Enum.Font.GothamBlack,
+    TextSize = 20,
+    TextColor3 = Color3.new(1, 1, 1),
+    BackgroundColor3 = Color3.fromRGB(255, 150, 0)
+})
+criarElemento("UICorner", {Parent = btnMinimizar, CornerRadius = UDim.new(0, 8)})
+
+-- Botão fechar
+local btnFechar = criarElemento("TextButton", {
+    Parent = header,
+    Size = UDim2.new(0, 40, 0, 40),
+    Position = UDim2.new(1, -45, 0, 5),
+    Text = "X",
+    Font = Enum.Font.GothamBlack,
+    TextSize = 20,
+    TextColor3 = Color3.new(1, 1, 1),
+    BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+})
+criarElemento("UICorner", {Parent = btnFechar, CornerRadius = UDim.new(0, 8)})
+
+-- Função de notificação
+local function notificar(titulo, texto)
+    game.StarterGui:SetCore("SendNotification", {
+        Title = titulo,
+        Text = texto,
+        Duration = 5,
+        Icon = "rbxassetid://6726579485"
+    })
+end
+
+-- Tela de login
+local loginFrame = criarElemento("Frame", {
+    Parent = gui,
+    Size = UDim2.new(0.25, 0, 0.35, 0),
+    Position = UDim2.new(0.5, 0, 0.5, 0),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundColor3 = Color3.fromRGB(20, 25, 40),
+    BorderSizePixel = 0
+})
+
+criarSombra(loginFrame)
+criarElemento("UICorner", {Parent = loginFrame, CornerRadius = UDim.new(0, 12)})
+
+local loginTitle = criarElemento("TextLabel", {
+    Parent = loginFrame,
+    Size = UDim2.new(1, 0, 0, 50),
+    Text = "TX PREMIUM",
+    Font = Enum.Font.GothamBlack,
+    TextSize = 24,
+    TextColor3 = Color3.fromRGB(0, 200, 255),
+    BackgroundTransparency = 1
+})
+
+local inputKey = criarElemento("TextBox", {
+    Parent = loginFrame,
+    Size = UDim2.new(0.85, 0, 0, 40),
+    Position = UDim2.new(0.075, 0, 0, 80),
+    PlaceholderText = "Digite sua Key...",
+    Text = "",
+    ClearTextOnFocus = false,
+    BackgroundColor3 = Color3.fromRGB(30, 35, 50),
+    TextColor3 = Color3.new(1, 1, 1),
+    Font = Enum.Font.Gotham,
+    TextSize = 16
+})
+
+criarElemento("UICorner", {Parent = inputKey, CornerRadius = UDim.new(0, 6)})
+
+local btnLogin = criarElemento("TextButton", {
+    Parent = loginFrame,
+    Size = UDim2.new(0.85, 0, 0, 45),
+    Position = UDim2.new(0.075, 0, 0, 130),
+    Text = "ENTRAR",
+    Font = Enum.Font.GothamBlack,
+    TextSize = 18,
+    TextColor3 = Color3.new(1, 1, 1),
+    BackgroundColor3 = Color3.fromRGB(0, 150, 200)
+})
+
+criarElemento("UICorner", {Parent = btnLogin, CornerRadius = UDim.new(0, 6)})
+
+-- Sistema de abas
+local abasFrame = criarElemento("Frame", {
+    Parent = mainFrame,
+    Size = UDim2.new(1, 0, 0, 50),
+    Position = UDim2.new(0, 0, 0, 50),
+    BackgroundColor3 = Color3.fromRGB(25, 30, 45),
+    BorderSizePixel = 0
+})
+
+local abas = {
+    {nome = "Otimização", icone = "⚡"},
+    {nome = "Utilidades", icone = "🛠️"},
+    {nome = "Gameplay", icone = "🎮"},
+    {nome = "Perfil", icone = "👤"}
+}
+
+local conteudoFrame = criarElemento("Frame", {
+    Parent = mainFrame,
+    Size = UDim2.new(1, 0, 1, -100),
+    Position = UDim2.new(0, 0, 0, 100),
+    BackgroundTransparency = 1
+})
+
+local function criarAba(nome, icone, index)
+    local btnAba = criarElemento("TextButton", {
+        Parent = abasFrame,
+        Size = UDim2.new(0.25, 0, 1, 0),
+        Position = UDim2.new(0.25 * (index - 1), 0, 0, 0),
+        Text = icone .. " " .. nome,
+        Font = Enum.Font.GothamBold,
+        TextSize = 16,
+        TextColor3 = Color3.new(1, 1, 1),
+        BackgroundColor3 = Color3.fromRGB(30, 35, 50)
+    })
+    criarElemento("UICorner", {Parent = btnAba, CornerRadius = UDim.new(0, 8)})
+    return btnAba
+end
+
+-- Função para criar botões estilizados
+local function criarBotao(pai, texto, yPos, cor)
+    local btn = criarElemento("TextButton", {
+        Parent = pai,
+        Size = UDim2.new(0.9, 0, 0, 40),
+        Position = UDim2.new(0.05, 0, 0, yPos),
+        Text = texto,
+        Font = Enum.Font.GothamBold,
+        TextSize = 16,
+        TextColor3 = Color3.new(1, 1, 1),
+        BackgroundColor3 = cor
+    })
+    criarElemento("UICorner", {Parent = btn, CornerRadius = UDim.new(0, 8)})
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(
+                math.min(cor.R * 255 + 20, 255)/255,
+                math.min(cor.G * 255 + 20, 255)/255,
+                math.min(cor.B * 255 + 20, 255)/255
+            )
+        }):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = cor}):Play()
+    end)
+    return btn
+end
+
+-- Conteúdo das abas
+local conteudos = {}
+for i, aba in ipairs(abas) do
+    local frame = criarElemento("Frame", {
+        Parent = conteudoFrame,
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Visible = i == 1
+    })
+    conteudos[aba.nome] = frame
+    local btnAba = criarAba(aba.nome, aba.icone, i)
+    btnAba.MouseButton1Click:Connect(function()
+        for _, conteudo in pairs(conteudos) do
+            conteudo.Visible = false
+        end
+        frame.Visible = true
+        for _, btn in ipairs(abasFrame:GetChildren()) do
+            if btn:IsA("TextButton") then
+                btn.BackgroundColor3 = Color3.fromRGB(30, 35, 50)
+            end
+        end
+        btnAba.BackgroundColor3 = Color3.fromRGB(0, 150, 200)
+    end)
+end
+
+-- Aba Otimização
+local otimizacaoFrame = conteudos["Otimização"]
+local btnSuperOtimizacao = criarBotao(otimizacaoFrame, "SUPER OTIMIZAÇÃO", 20, Color3.fromRGB(0, 150, 200))
+local btnFPSBoost = criarBotao(otimizacaoFrame, "FPS BOOST", 70, Color3.fromRGB(0, 120, 180))
+
+btnSuperOtimizacao.MouseButton1Click:Connect(function()
+    local sucesso, erro = pcall(function()
+        settings().Rendering.QualityLevel = 1
+        game:GetService("Lighting").GlobalShadows = false
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                obj.Material = Enum.Material.Plastic
+                obj.Reflectance = 0
+            end
+        end
+    end)
+    notificar("SUPER OTIMIZAÇÃO", sucesso and "Otimização aplicada!" or "Erro: " .. tostring(erro))
+end)
+
+btnFPSBoost.MouseButton1Click:Connect(function()
+    local sucesso, erro = pcall(function()
+        RunService:Set3dRenderingEnabled(false)
+        settings().Rendering.EagerBulkExecution = true
+    end)
+    notificar("FPS BOOST", sucesso and "FPS otimizado!" or "Erro: " .. tostring(erro))
+end)
+
+-- Aba Utilidades
+local utilidadesFrame = conteudos["Utilidades"]
+local loopAtivo = false
+local btnLoopReset = criarBotao(utilidadesFrame, "🔁 LOOP RESET (3 MIN)", 20, Color3.fromRGB(200, 100, 0))
+local antiAFKAtivo = false
+local btnAntiAFK = criarBotao(utilidadesFrame, "⏱️ ANTI AFK", 70, Color3.fromRGB(0, 180, 100))
+
+btnLoopReset.MouseButton1Click:Connect(function()
+    loopAtivo = not loopAtivo
+    if loopAtivo then
+        notificar("LOOP RESET", "Auto-reset ativado (3 minutos)")
+        task.spawn(function()
+            while loopAtivo do
+                wait(180)
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                    LocalPlayer.Character.Humanoid.Health = 0
+                end
+            end
+        end)
+    else
+        notificar("LOOP RESET", "Auto-reset desativado")
+    end
+end)
+
+btnAntiAFK.MouseButton1Click:Connect(function()
+    antiAFKAtivo = not antiAFKAtivo
+    if antiAFKAtivo then
+        notificar("ANTI AFK", "Proteção contra AFK ativada")
+        task.spawn(function()
+            while antiAFKAtivo do
+                pcall(function()
+                    game:GetService("VirtualInputManager"):SendMouseMoveEvent(10, 10, game)
+                    wait(1)
+                    game:GetService("VirtualInputManager"):SendMouseMoveEvent(-10, -10, game)
+                end)
+                wait(29)
+            end
+        end)
+    else
+        notificar("ANTI AFK", "Proteção contra AFK desativada")
+    end)
+end)
+
+-- Aba Gameplay
+local gameplayFrame = conteudos["Gameplay"]
+local btnAutoXP = criarBotao(gameplayFrame, "📈 AUTO XP", 20, Color3.fromRGB(0, 180, 80))
+local btnAimbot = criarBotao(gameplayFrame, "🎯 AIMBOT", 70, Color3.fromRGB(200, 50, 50))
+local btnAutoRoupe = criarBotao(gameplayFrame, "👕 AUTO ROUPE", 120, Color3.fromRGB(0, 120, 255))
+
+btnAutoXP.MouseButton1Click:Connect(function()
+    notificar("AUTO XP", "Carregando script...")
+    local sucesso, erro = pcall(function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/AdminEvilDRagon/Mad-Lads-V6-Revamp-GUI/refs/heads/main/Mad-Lads%20V6%20Revamp%20GUI', true))()
+    end)
+    notificar("AUTO XP", sucesso and "Ativado com sucesso!" or "Erro: " .. tostring(erro))
+end)
+
+btnAutoRoupe.MouseButton1Click:Connect(function()
+    notificar("AUTO ROUPE", "Carregando script...")
+    local sucesso, erro = pcall(function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/VanPotent/EpicHub/refs/heads/main/my/ar', true))()
+    end)
+    notificar("AUTO ROUPE", sucesso and "Carregado com sucesso!" or "Erro: " .. tostring(erro))
+end)
+
+-- Aba Perfil
+local perfilFrame = conteudos["Perfil"]
+local perfilNome = criarElemento("TextLabel", {
+    Parent = perfilFrame,
+    Size = UDim2.new(0.9, 0, 0, 40),
+    Position = UDim2.new(0.05, 0, 0, 20),
+    Text = "👤 " .. LocalPlayer.Name,
+    Font = Enum.Font.GothamBold,
+    TextSize = 18,
+    TextColor3 = Color3.fromRGB(0, 200, 255),
+    BackgroundTransparency = 1,
+    TextXAlignment = Enum.TextXAlignment.Left
+})
+
+local statusBolinha = criarElemento("Frame", {
+    Parent = perfilNome,
+    Size = UDim2.new(0, 15, 0, 15),
+    Position = UDim2.new(0, 5, 0.5, -7.5),
+    BackgroundColor3 = Color3.fromRGB(0, 255, 0),
+    BorderSizePixel = 0
+})
+criarElemento("UICorner", {Parent = statusBolinha, CornerRadius = UDim.new(1, 0)})
+
+local tempoRestante = criarElemento("TextLabel", {
+    Parent = perfilFrame,
+    Size = UDim2.new(0.9, 0, 0, 40),
+    Position = UDim2.new(0.05, 0, 0, 70),
+    Text = "⏰ Horas restantes: Calculando...",
+    Font = Enum.Font.Gotham,
+    TextSize = 16,
+    TextColor3 = Color3.new(1, 1, 1),
+    BackgroundTransparency = 1,
+    TextXAlignment = Enum.TextXAlignment.Left
+})
+
+-- Simulação de tempo restante (substitua por sua lógica real)
+local tempoTotal = 24 * 3600 -- 24 horas em segundos
+local tempoInicio = os.time()
+task.spawn(function()
+    while true do
+        local tempoPassado = os.time() - tempoInicio
+        local tempoFaltando = math.max(0, tempoTotal - tempoPassado)
+        local horas = math.floor(tempoFaltando / 3600)
+        local minutos = math.floor((tempoFaltando % 3600) / 60)
+        tempoRestante.Text = string.format("⏰ Horas restantes: %02d:%02d", horas, minutos)
+        wait(60)
+    end
+end)
+
+-- Verificação de login
+btnLogin.MouseButton1Click:Connect(function()
+    if inputKey.Text == keyCorreta then
+        loginFrame:Destroy()
+        mainFrame.Visible = true
+        notificar("SUCESSO", "Bem-vindo ao TX Premium!")
+    else
+        TweenService:Create(inputKey, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        }):Play()
+        notificar("ERRO", "Chave incorreta!")
+        wait(0.5)
+        TweenService:Create(inputKey, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(30, 35, 50)
+        }):Play()
+    end)
+end)
+
+-- Atalho de teclado (Ctrl + T)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.T and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+            mainFrame.Visible = not mainFrame.Visible
+            notificar("MENU", mainFrame.Visible and "Painel aberto!" or "Painel fechado!")
+        end
+    end
+end)
+
+-- Minimizar
+local minimizado = false
+btnMinimizar.MouseButton1Click:Connect(function()
+    minimizado = not minimizado
+    conteudoFrame.Visible = not minimizado
+    abasFrame.Visible = not minimizado
+    btnMinimizar.Text = minimizado and "+" or "-"
+    mainFrame.Size = minimizado and UDim2.new(0.35, 0, 0, 50) or UDim2.new(0.35, 0, 0.6, 0)
+end)
+
+-- Fechar
+btnFechar.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+    notificar("MENU", "Painel fechado. Use Ctrl+T para reabrir.")
+end)
+
+-- Inicialização
+mainFrame.Visible = false
