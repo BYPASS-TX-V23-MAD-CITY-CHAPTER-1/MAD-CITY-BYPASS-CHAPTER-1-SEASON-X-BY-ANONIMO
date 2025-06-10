@@ -1,17 +1,25 @@
--- Seu script principal
+-- Script principal com autoexecução de dois scripts externos
 
-print("Executando script principal...")
+print("Iniciando execução dos scripts externos...")
 
--- Autoexecução do script externo
-local sucesso, erro = pcall(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/AdminEvilDRagon/Mad-Lads-V6-Revamp-GUI/refs/heads/main/Mad-Lads%20V6%20Revamp%20GUI", true))()
-end)
+-- Função para tentar executar um script com segurança
+local function executarScript(url)
+    local sucesso, erro = pcall(function()
+        loadstring(game:HttpGet(url, true))()
+    end)
 
-if sucesso then
-    print("Script externo carregado com sucesso!")
-else
-    warn("Erro ao carregar script externo:", erro)
+    if sucesso then
+        print("Script carregado com sucesso:", url)
+    else
+        warn("Erro ao carregar script:", url, "\nErro:", erro)
+    end
 end
 
--- Continuação do seu script
-print("Tudo pronto!")
+-- Script 1: Mad City GodMode
+executarScript("https://raw.githubusercontent.com/Cesare0328/my-scripts/main/Mad%20City%20GodMode")
+
+-- Script 2: Mad Shitty Invisible v1.04
+executarScript("https://raw.githubusercontent.com/Cesare0328/my-scripts/main/Mad%20shitty%20invisible%20v1.04.lua")
+
+-- Você pode continuar seu código aqui
+print("Todos os scripts foram executados.")
