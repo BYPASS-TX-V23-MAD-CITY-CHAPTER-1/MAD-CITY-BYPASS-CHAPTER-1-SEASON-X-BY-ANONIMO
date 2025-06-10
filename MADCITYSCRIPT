@@ -18,8 +18,5 @@ end
 -- Script 1: Mad City GodMode
 executarScript("https://raw.githubusercontent.com/Cesare0328/my-scripts/main/Mad%20City%20GodMode")
 
--- Script 2: Mad Shitty Invisible v1.04
-executarScript("https://raw.githubusercontent.com/Cesare0328/my-scripts/main/Mad%20shitty%20invisible%20v1.04.lua")
-
 -- Você pode continuar seu código aqui
 print("Todos os scripts foram executados.")
