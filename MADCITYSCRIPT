@@ -526,61 +526,7 @@ local function criarPainelResponsivo()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/BYPASS-TX-V23-MAD-CITY-CHAPTER-1/MAD-CITY-BYPASS-CHAPTER-1-SEASON-X-BY-ANONIMO/main/BYPASS"))()
         end},
         
-        {"🌀 FAKE LAG PRO", function()
-            iniciarFakeLag()
-        end}
-    }
-
-    -- Criar botões de Otimização
-    for i, btnData in ipairs(otimizacaoButtons) do
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, 0, 0, isMobile and 45 or 40)
-        btn.Text = btnData[1]
-        btn.BackgroundColor3 = Color3.fromRGB(40, 20, 60)
-        btn.TextColor3 = Color3.new(1, 1, 1)
-        btn.Font = Enum.Font.GothamBold
-        btn.TextSize = isMobile and 18 or 16
-        btn.AutoButtonColor = false
-        btn.Parent = scrollFrame
         
-        local btnCorner = Instance.new("UICorner")
-        btnCorner.CornerRadius = UDim.new(0, 8)
-        btnCorner.Parent = btn
-        
-        -- Efeito de borda
-        local border = Instance.new("Frame")
-        border.Size = UDim2.new(1, 2, 1, 2)
-        border.Position = UDim2.new(0, -1, 0, -1)
-        border.BackgroundColor3 = Color3.fromRGB(150, 0, 255)
-        border.BackgroundTransparency = 0.8
-        border.ZIndex = -1
-        border.Parent = btn
-        
-        local borderCorner = Instance.new("UICorner")
-        borderCorner.CornerRadius = UDim.new(0, 8)
-        borderCorner.Parent = border
-        
-        -- Efeito hover
-        btn.MouseEnter:Connect(function()
-            TweenService:Create(btn, TweenInfo.new(0.2), {
-                BackgroundColor3 = Color3.fromRGB(60, 30, 90)
-            }):Play()
-            TweenService:Create(border, TweenInfo.new(0.2), {
-                BackgroundTransparency = 0.5
-            }):Play()
-        end)
-        
-        btn.MouseLeave:Connect(function()
-            TweenService:Create(btn, TweenInfo.new(0.2), {
-                BackgroundColor3 = Color3.fromRGB(40, 20, 60)
-            }):Play()
-            TweenService:Create(border, TweenInfo.new(0.2), {
-                BackgroundTransparency = 0.8
-            }):Play()
-        end)
-        
-        btn.MouseButton1Click:Connect(btnData[2])
-    end
 
     -- Botão de destruição da UI
     local destroyBtn = Instance.new("TextButton")
@@ -600,7 +546,63 @@ local function criarPainelResponsivo()
     -- Efeito de borda
     local border = Instance.new("Frame")
     border.Size = UDim2.new(1, 2, 1, 2)
+    border.Position = UDim2.new(0, -1, 0{"🌀 FAKE LAG PRO", function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/BYPASS-TX-V23-MAD-CITY-CHAPTER-1/MAD-CITY-BYPASS-CHAPTER-1-SEASON-X-BY-ANONIMO/main/Fakelagglojal"))()
+    end}
+}
+
+-- Criar botões de Otimização
+for i, btnData in ipairs(otimizacaoButtons) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, isMobile and 45 or 40)
+    btn.Position = UDim2.new(0, 0, 0, (i - 1) * (isMobile and 50 or 45))
+    btn.Text = btnData[1]
+    btn.BackgroundColor3 = Color3.fromRGB(40, 20, 60)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = isMobile and 18 or 16
+    btn.AutoButtonColor = false
+    btn.Parent = scrollFrame
+    
+    -- Cantos arredondados
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = btn
+    
+    -- Efeito de borda
+    local border = Instance.new("Frame")
+    border.Size = UDim2.new(1, 2, 1, 2)
     border.Position = UDim2.new(0, -1, 0, -1)
+    border.BackgroundColor3 = Color3.fromRGB(150, 0, 255)
+    border.BackgroundTransparency = 0.8
+    border.ZIndex = -1
+    border.Parent = btn
+
+    local borderCorner = Instance.new("UICorner")
+    borderCorner.CornerRadius = UDim.new(0, 8)
+    borderCorner.Parent = border
+
+    -- Efeito hover
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(60, 30, 90)
+        }):Play()
+        TweenService:Create(border, TweenInfo.new(0.2), {
+            BackgroundTransparency = 0.5
+        }):Play()
+    end)
+
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(40, 20, 60)
+        }):Play()
+        TweenService:Create(border, TweenInfo.new(0.2), {
+            BackgroundTransparency = 0.8
+        }):Play()
+    end)
+
+    btn.MouseButton1Click:Connect(btnData[2])
+end, -1)
     border.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
     border.BackgroundTransparency = 0.8
     border.ZIndex = -1
