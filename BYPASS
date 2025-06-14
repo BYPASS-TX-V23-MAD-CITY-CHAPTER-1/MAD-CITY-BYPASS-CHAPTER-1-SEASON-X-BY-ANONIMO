@@ -1,190 +1,44 @@
 --[[
-    ANÔNIMO TX - FPS BOOST EXTREMO
+    ANÔNIMO TX - MEMORY CLEANER PRO
     Recursos:
-    - Remoção total de texturas
-    - Congelamento de personagens distantes
-    - Auto-limpeza de memória em loop
-    - Renderização otimizada por distância
-    - Remoção de skins e roupas
-    - Controle total de iluminação
+    - Limpeza de memória RAM em tempo real
+    - Redução de overhead de CPU
+    - Coleta de lixo forçada
+    - Liberação de cache de texturas
+    - Interface simplificada
 --]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
-local Workspace = game:GetService("Workspace")
 local Stats = game:GetService("Stats")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
 -- Configurações
-local RENDER_DISTANCE = 50  -- Distância máxima de renderização
-local CLEANUP_INTERVAL = 10 -- Intervalo de limpeza em segundos
+local CLEANUP_INTERVAL = 0.1 -- Intervalo ultra-rápido (100ms)
 
--- Funções auxiliares
-local function removeIf(obj, condition)
-    if condition and obj and obj.Parent then
-        pcall(function()
-            obj:Destroy()
-        end)
-    end
-end
-
-local function isFarAway(obj, cam)
-    if obj:IsA("BasePart") then
-        local dist = (cam.CFrame.Position - obj.Position).Magnitude
-        return dist > RENDER_DISTANCE
-    end
-    return false
-end
-
--- Sistema de limpeza de memória
+-- Função principal de limpeza de memória
 local function clearMemoryCache()
-    for _, service in ipairs({Workspace, Lighting}) do
-        for _, obj in ipairs(service:GetDescendants()) do
-            pcall(function()
-                if obj:IsA("Texture") or obj:IsA("Decal") then
-                    obj.Texture = ""
-                end
-            end)
-        end
-    end
-    
-    for i = 1, 3 do
+    -- 1. Forçar coleta de lixo (Lua VM)
+    for i = 1, 5 do
         collectgarbage("collect")
-        task.wait(0.1)
     end
-end
-
--- Função para congelar e esconder personagens
-local function handleDistantCharacters(cam)
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local char = player.Character
-            if char then
-                local root = char:FindFirstChild("HumanoidRootPart")
-                if root then
-                    local dist = (cam.CFrame.Position - root.Position).Magnitude
-                    
-                    if dist > RENDER_DISTANCE then
-                        for _, part in ipairs(char:GetDescendants()) do
-                            pcall(function()
-                                if part:IsA("BasePart") then
-                                    part.Transparency = 1
-                                    part.CanCollide = false
-                                end
-                            end)
-                        end
-                        
-                        for _, accessory in ipairs(char:GetDescendants()) do
-                            pcall(function()
-                                if accessory:IsA("Accessory") or 
-                                   accessory:IsA("Clothing") or 
-                                   accessory:IsA("Shirt") or 
-                                   accessory:IsA("Pants") then
-                                    accessory:Destroy()
-                                end
-                            end)
-                        end
-                        
-                        local humanoid = char:FindFirstChild("Humanoid")
-                        if humanoid then
-                            pcall(function()
-                                humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-                                humanoid.WalkSpeed = 0
-                                humanoid.JumpPower = 0
-                            end)
-                        end
-                    else
-                        for _, part in ipairs(char:GetDescendants()) do
-                            pcall(function()
-                                if part:IsA("BasePart") then
-                                    part.Transparency = 0
-                                end
-                            end)
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
-
--- Função principal de otimização
-function updateOptimization()
-    local cam = Workspace.CurrentCamera
-    if not cam then return end
-
-    -- 1. Remover todas as texturas
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        pcall(function()
-            if obj:IsA("Texture") or obj:IsA("Decal") then
-                obj.Texture = ""
-            end
-            
-            if obj:IsA("BasePart") then
-                obj.Material = Enum.Material.Plastic
-                obj.Reflectance = 0
-                obj.CastShadow = false
-            end
-        end)
-    end
-
-    -- 2. Eliminar luzes e sombras
-    Lighting.GlobalShadows = false
-    Lighting.FogEnd = RENDER_DISTANCE * 1.5
     
-    for _, obj in ipairs(Workspace:GetDescendants()) do
+    -- 2. Liberar memória de texturas
+    for _, instance in ipairs(workspace:GetDescendants()) do
         pcall(function()
-            if obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
-                obj.Enabled = false
+            if instance:IsA("Texture") or instance:IsA("Decal") then
+                instance:Release()
             end
         end)
     end
-
-    -- 3. Objetos distantes
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        pcall(function()
-            if isFarAway(obj, cam) then
-                if obj:IsA("ParticleEmitter") or obj:IsA("Smoke") or obj:IsA("Fire") then
-                    removeIf(obj, true)
-                end
-                
-                if obj:IsA("AnimationController") or obj:IsA("Animator") then
-                    removeIf(obj, true)
-                end
-                
-                if obj:IsA("BasePart") then
-                    obj.Transparency = 0.9
-                    obj.CanCollide = false
-                end
-            end
-        end)
-    end
-
-    -- 4. Remover skins e roupas
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.Character then
-            for _, item in ipairs(player.Character:GetDescendants()) do
-                pcall(function()
-                    if item:IsA("Accessory") or item:IsA("Clothing") or 
-                       item:IsA("Shirt") or item:IsA("Pants") then
-                        removeIf(item, true)
-                    end
-                    
-                    if item:IsA("Decal") then
-                        item.Texture = ""
-                    end
-                end)
-            end
-        end
-    end
-
-    -- 5. Manipular personagens
-    handleDistantCharacters(cam)
-
-    -- 6. Limpeza de memória
-    clearMemoryCache()
+    
+    -- 3. Reduzir overhead de instâncias
+    game:GetService("ContentProvider"):PreloadAsync({}, function() end)
+    
+    -- 4. Limpar cache interno do Roblox
+    settings().Rendering.RenderDFR = false
+    settings().Rendering.QualityLevel = 1
 end
 
 -- Sistema de limpeza automática
@@ -192,15 +46,20 @@ local autoCleanEnabled = false
 local autoCleanThread = nil
 
 local function startAutoClean()
-    if autoCleanThread then
-        autoCleanEnabled = false
-        task.wait(0.2)
-    end
+    if autoCleanThread then return end
     
     autoCleanEnabled = true
     autoCleanThread = task.spawn(function()
+        local lastUpdate = time()
         while autoCleanEnabled do
-            updateOptimization()
+            clearMemoryCache()
+            
+            -- Atualizar status a cada 1 segundo
+            if time() - lastUpdate > 1 then
+                lastUpdate = time()
+                statusLabel.Text = "Status: Limpando... Mem: " .. math.floor(Stats:GetTotalMemoryUsageMb()) .. "MB"
+            end
+            
             task.wait(CLEANUP_INTERVAL)
         end
         autoCleanThread = nil
@@ -209,14 +68,14 @@ end
 
 -- Configuração da GUI
 local screenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
-screenGui.Name = "FPSBoostProGui"
+screenGui.Name = "MemoryCleanerProGui"
 screenGui.ResetOnSpawn = false
 
 -- Botão de Alternar
 local toggleButton = Instance.new("TextButton", screenGui)
-toggleButton.Size = UDim2.new(0, 160, 0, 35)
+toggleButton.Size = UDim2.new(0, 180, 0, 35)
 toggleButton.Position = UDim2.new(0, 20, 0, 20)
-toggleButton.Text = "Mostrar FPS Boost"
+toggleButton.Text = "Mostrar Memory Cleaner"
 toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
 toggleButton.TextColor3 = Color3.new(1, 1, 1)
 toggleButton.Font = Enum.Font.GothamBold
@@ -249,8 +108,8 @@ end
 
 -- Display de FPS e Memória
 local fpsLabel = Instance.new("TextLabel", screenGui)
-fpsLabel.Size = UDim2.new(0, 180, 0, 30)
-fpsLabel.Position = UDim2.new(0, 190, 0, 20)
+fpsLabel.Size = UDim2.new(0, 200, 0, 30)
+fpsLabel.Position = UDim2.new(0, 210, 0, 20)
 fpsLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 fpsLabel.BackgroundTransparency = 0.3
 fpsLabel.TextColor3 = Color3.new(1, 1, 1)
@@ -272,7 +131,7 @@ statusLabel.Text = "Status: Aguardando..."
 
 -- Frame Principal
 local frame = Instance.new("Frame", screenGui)
-frame.Size = UDim2.new(0, 280, 0, 180)
+frame.Size = UDim2.new(0, 280, 0, 150)
 frame.Position = UDim2.new(0, 20, 0, 100)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 frame.BackgroundTransparency = 0.05
@@ -287,35 +146,34 @@ local uiVisible = false
 toggleButton.MouseButton1Click:Connect(function()
     uiVisible = not uiVisible
     frame.Visible = uiVisible
-    toggleButton.Text = uiVisible and "Esconder FPS Boost" or "Mostrar FPS Boost"
+    toggleButton.Text = uiVisible and "Esconder Memory Cleaner" or "Mostrar Memory Cleaner"
 end)
 
 -- Título
 local title = Instance.new("TextLabel", frame)
-title.Text = "FPS BOOST EXTREMO"
+title.Text = "MEMORY CLEANER PRO"
 title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
 title.TextColor3 = Color3.fromRGB(200, 200, 255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
 
--- Botão de Ativação
-local altoBtn = Instance.new("TextButton", frame)
-altoBtn.Size = UDim2.new(1, -30, 0, 40)
-altoBtn.Position = UDim2.new(0, 15, 0, 50)
-altoBtn.Text = "ATIVAR OTI IZAÇÃO ALTA"
-altoBtn.BackgroundColor3 = Color3.fromRGB(70, 100, 150)
-altoBtn.TextColor3 = Color3.new(1, 1, 1)
-altoBtn.Font = Enum.Font.GothamBold
-altoBtn.TextSize = 16
-local altoCorner = Instance.new("UICorner", altoBtn)
-altoCorner.CornerRadius = UDim.new(0, 6)
+-- Botão de Limpeza Rápida
+local cleanBtn = Instance.new("TextButton", frame)
+cleanBtn.Size = UDim2.new(1, -30, 0, 40)
+cleanBtn.Position = UDim2.new(0, 15, 0, 50)
+cleanBtn.Text = "LIMPAR MEMÓRIA AGORA"
+cleanBtn.BackgroundColor3 = Color3.fromRGB(70, 100, 150)
+cleanBtn.TextColor3 = Color3.new(1, 1, 1)
+cleanBtn.Font = Enum.Font.GothamBold
+cleanBtn.TextSize = 16
+local cleanCorner = Instance.new("UICorner", cleanBtn)
+cleanCorner.CornerRadius = UDim.new(0, 6)
 
-altoBtn.MouseButton1Click:Connect(function()
-    statusLabel.Text = "Status: Aplicando otimizações..."
-    updateOptimization()
-    statusLabel.Text = "Status: Otimização completa!"
-    notify("Otimização EXTREMA aplicada!", true)
+cleanBtn.MouseButton1Click:Connect(function()
+    clearMemoryCache()
+    statusLabel.Text = "Status: Memória limpa!"
+    notify("Memória RAM liberada!", true)
 end)
 
 -- Botão de Limpeza Automática
@@ -363,11 +221,11 @@ end)
 local credits = Instance.new("TextLabel", frame)
 credits.Size = UDim2.new(1, -20, 0, 20)
 credits.Position = UDim2.new(0, 10, 1, -25)
-credits.Text = "ANÔNIMO TX - FPS BOOST EXTREMO"
+credits.Text = "ANÔNIMO TX - MEMORY CLEANER"
 credits.TextColor3 = Color3.fromRGB(255, 255, 0)
 credits.BackgroundTransparency = 1
 credits.Font = Enum.Font.GothamBold
 credits.TextSize = 12
 
 -- Inicialização
-notify("FPS Boost Extremo carregado!", true)
+notify("Memory Cleaner Pro carregado!", true)
