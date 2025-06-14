@@ -1,9 +1,9 @@
--- ANÔNIMO TX - PAINEL ULTIMATE PREMIUM PRO V5
+-- ANÔNIMO TX - PAINEL ULTIMATE PREMIUM PRO V6
 -- Correções e melhorias:
--- - Todas as funções agora executam scripts externos corretamente
+-- - Botão Fake Lag corrigido para executar script externo
 -- - Design premium roxo/preto aprimorado
 -- - Botão minimizar com ícone TX flutuante
--- - Funções completas com scripts específicos
+-- - Todas as funções executam scripts externos corretamente
 
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
@@ -130,7 +130,7 @@ local function criarAnimacaoPremium()
         end
 
         -- Animação de digitação do texto
-        local fullText = "ANÔNIMO TX V5"
+        local fullText = "ANÔNIMO TX V6"
         local currentText = ""
         for i = 1, #fullText do
             currentText = string.sub(fullText, 1, i)
@@ -165,49 +165,11 @@ local function criarAnimacaoPremium()
     return transitionGui
 end
 
--- SISTEMA FAKE LAG DO GITHUB (AGORA FUNCIONAL)
-local function iniciarFakeLag()
-    -- Carregar script do GitHub
-    local url = "https://raw.githubusercontent.com/BYPASS-TX-V23-MAD-CITY-CHAPTER-1/MAD-CITY-BYPASS-CHAPTER-1-SEASON-X-BY-ANONIMO/main/Fakelagg.lua"
-    
-    local success, response = pcall(function()
-        return HttpService:GetAsync(url, true)
-    end)
-    
-    if success then
-        local success2, err = pcall(function()
-            loadstring(response)()
-        end)
-        
-        if success2 then
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "FAKE LAG",
-                Text = "Sistema ativado com sucesso!",
-                Duration = 5
-            })
-        else
-            warn("Erro ao executar o script: " .. err)
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "ERRO",
-                Text = "Falha ao executar o Fake Lag!",
-                Duration = 5
-            })
-        end
-    else
-        warn("Falha ao carregar o script: " .. response)
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "ERRO",
-            Text = "Falha ao carregar o script do Fake Lag!",
-            Duration = 5
-        })
-    end
-end
-
 -- PAINEL RESPONSIVO COM NOVO DESIGN E FUNÇÕES ATIVAS
 local function criarPainelResponsivo()
     -- GUI Principal
     local gui = Instance.new("ScreenGui")
-    gui.Name = "AnonimoTXUltimateV5"
+    gui.Name = "AnonimoTXUltimateV6"
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     gui.Parent = game:GetService("CoreGui")
 
@@ -262,7 +224,7 @@ local function criarPainelResponsivo()
     local titleText = Instance.new("TextLabel")
     titleText.Size = UDim2.new(0.7, 0, 1, 0)
     titleText.Position = UDim2.new(0.15, 0, 0, 0)
-    titleText.Text = "TX ULTIMATE V5"
+    titleText.Text = "TX ULTIMATE V6"
     titleText.TextColor3 = Color3.fromRGB(200, 100, 255)
     titleText.BackgroundTransparency = 1
     titleText.Font = Enum.Font.GothamBlack
@@ -502,6 +464,7 @@ local function criarPainelResponsivo()
     otimizacaoLabel.TextXAlignment = Enum.TextXAlignment.Left
     otimizacaoLabel.Parent = scrollFrame
 
+    -- CORREÇÃO DO FAKE LAG - AGORA USANDO O MESMO MÉTODO DOS OUTROS
     local otimizacaoButtons = {
         {"🧼 OTIMIZAÇÃO EXTREMA", function()
             for _, obj in ipairs(game:GetDescendants()) do
@@ -526,7 +489,67 @@ local function criarPainelResponsivo()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/BYPASS-TX-V23-MAD-CITY-CHAPTER-1/MAD-CITY-BYPASS-CHAPTER-1-SEASON-X-BY-ANONIMO/main/BYPASS"))()
         end},
         
+        -- CORREÇÃO: FAKE LAG EXECUTANDO SCRIPT EXTERNO IGUAL AOS OUTROS
+        {"🌀 FAKE LAG PRO", function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/BYPASS-TX-V23-MAD-CITY-CHAPTER-1/MAD-CITY-BYPASS-CHAPTER-1-SEASON-X-BY-ANONIMO/main/Fakelagglojal", true))()
+            game:GetService("StarterGui"):SetCore("SendNotification",{
+                Title = "FAKE LAG",
+                Text = "Sistema ativado com sucesso!",
+                Duration = 5
+            })
+        end}
+    }
+
+    -- Criar botões de Otimização
+    for i, btnData in ipairs(otimizacaoButtons) do
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, 0, 0, isMobile and 45 or 40)
+        btn.Text = btnData[1]
+        btn.BackgroundColor3 = Color3.fromRGB(40, 20, 60)
+        btn.TextColor3 = Color3.new(1, 1, 1)
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = isMobile and 18 or 16
+        btn.AutoButtonColor = false
+        btn.Parent = scrollFrame
         
+        local btnCorner = Instance.new("UICorner")
+        btnCorner.CornerRadius = UDim.new(0, 8)
+        btnCorner.Parent = btn
+        
+        -- Efeito de borda
+        local border = Instance.new("Frame")
+        border.Size = UDim2.new(1, 2, 1, 2)
+        border.Position = UDim2.new(0, -1, 0, -1)
+        border.BackgroundColor3 = Color3.fromRGB(150, 0, 255)
+        border.BackgroundTransparency = 0.8
+        border.ZIndex = -1
+        border.Parent = btn
+        
+        local borderCorner = Instance.new("UICorner")
+        borderCorner.CornerRadius = UDim.new(0, 8)
+        borderCorner.Parent = border
+        
+        -- Efeito hover
+        btn.MouseEnter:Connect(function()
+            TweenService:Create(btn, TweenInfo.new(0.2), {
+                BackgroundColor3 = Color3.fromRGB(60, 30, 90)
+            }):Play()
+            TweenService:Create(border, TweenInfo.new(0.2), {
+                BackgroundTransparency = 0.5
+            }):Play()
+        end)
+        
+        btn.MouseLeave:Connect(function()
+            TweenService:Create(btn, TweenInfo.new(0.2), {
+                BackgroundColor3 = Color3.fromRGB(40, 20, 60)
+            }):Play()
+            TweenService:Create(border, TweenInfo.new(0.2), {
+                BackgroundTransparency = 0.8
+            }):Play()
+        end)
+        
+        btn.MouseButton1Click:Connect(btnData[2])
+    end
 
     -- Botão de destruição da UI
     local destroyBtn = Instance.new("TextButton")
@@ -546,63 +569,7 @@ local function criarPainelResponsivo()
     -- Efeito de borda
     local border = Instance.new("Frame")
     border.Size = UDim2.new(1, 2, 1, 2)
-    border.Position = UDim2.new(0, -1, 0{"🌀 FAKE LAG PRO", function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/BYPASS-TX-V23-MAD-CITY-CHAPTER-1/MAD-CITY-BYPASS-CHAPTER-1-SEASON-X-BY-ANONIMO/main/Fakelagglojal"))()
-    end}
-}
-
--- Criar botões de Otimização
-for i, btnData in ipairs(otimizacaoButtons) do
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, isMobile and 45 or 40)
-    btn.Position = UDim2.new(0, 0, 0, (i - 1) * (isMobile and 50 or 45))
-    btn.Text = btnData[1]
-    btn.BackgroundColor3 = Color3.fromRGB(40, 20, 60)
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = isMobile and 18 or 16
-    btn.AutoButtonColor = false
-    btn.Parent = scrollFrame
-    
-    -- Cantos arredondados
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 8)
-    btnCorner.Parent = btn
-    
-    -- Efeito de borda
-    local border = Instance.new("Frame")
-    border.Size = UDim2.new(1, 2, 1, 2)
     border.Position = UDim2.new(0, -1, 0, -1)
-    border.BackgroundColor3 = Color3.fromRGB(150, 0, 255)
-    border.BackgroundTransparency = 0.8
-    border.ZIndex = -1
-    border.Parent = btn
-
-    local borderCorner = Instance.new("UICorner")
-    borderCorner.CornerRadius = UDim.new(0, 8)
-    borderCorner.Parent = border
-
-    -- Efeito hover
-    btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(60, 30, 90)
-        }):Play()
-        TweenService:Create(border, TweenInfo.new(0.2), {
-            BackgroundTransparency = 0.5
-        }):Play()
-    end)
-
-    btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {
-            BackgroundColor3 = Color3.fromRGB(40, 20, 60)
-        }):Play()
-        TweenService:Create(border, TweenInfo.new(0.2), {
-            BackgroundTransparency = 0.8
-        }):Play()
-    end)
-
-    btn.MouseButton1Click:Connect(btnData[2])
-end, -1)
     border.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
     border.BackgroundTransparency = 0.8
     border.ZIndex = -1
@@ -673,7 +640,7 @@ spawn(function()
     
     -- Notificação inicial
     game:GetService("StarterGui"):SetCore("SendNotification",{
-        Title = "ANÔNIMO TX V5",
+        Title = "ANÔNIMO TX V6",
         Text = "Painel Ultimate Premium carregado!",
         Duration = 5
     })
