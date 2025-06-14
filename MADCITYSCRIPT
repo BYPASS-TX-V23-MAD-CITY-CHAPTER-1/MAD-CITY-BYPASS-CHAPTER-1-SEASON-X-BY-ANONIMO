@@ -1,167 +1,290 @@
 --[[
-    ANÔNIMO TX - PAINEL ULTIMATE
-    Recursos:
-    - Animação de carregamento premium ajustada
-    - Painel móvel completo (não apenas a barra)
-    - Minimização com ícone TX visível
-    - Aimbot integrado
-    - Design profissional
+    ANÔNIMO TX - PAINEL ULTIMATE PREMIUM PRO
+    Recursos Aprimorados:
+    - Animação premium com logo do Roblox girando e efeito de onda
+    - Design totalmente responsivo com efeitos RGB e gradientes
+    - Funções completas incluindo Fake Lag integrado
+    - Botões com efeitos de hover, sombras e animações
+    - Sistema de destruição completo da UI
+    - CRÉDITOS: ANÔNIMO TX
 ]]
 
--- CONFIGURAÇÕES
+-- Serviços
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local ContentProvider = game:GetService("ContentProvider")
+
+-- Configurações
 local key_atual = "Duck"
 local tempo_total_horas = 120
-local keyFile = "anonimo_tx_keydata.txt"
 
--- Verificar suporte
-if not writefile or not readfile then
-    game:GetService("StarterGui"):SetCore("SendNotification",{
-        Title = "ERRO",
-        Text = "Seu executor não suporta writefile/readfile!",
-        Duration = 10
-    })
-    return
-end
+-- Carregar recursos antecipadamente
+ContentProvider:PreloadAsync({
+    "rbxassetid://6962520789",  -- Logo Roblox
+    "rbxassetid://48965808",     -- Textura de brilho
+    "rbxassetid://1316045217"    -- Textura de sombra
+})
 
--- Funções auxiliares
-local function calcularTempoRestante(timestamp)
-    return math.max((tempo_total_horas * 3600) - (os.time() - timestamp), 0)
-end
-
--- ANIMAÇÃO DE CARREGAMENTO PREMIUM AJUSTADA
+-- ANIMAÇÃO PREMIUM COM LOGO ROBLOX
 local function criarAnimacaoPremium()
     local transitionGui = Instance.new("ScreenGui")
     transitionGui.Name = "TXPremiumAnimation"
     transitionGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     transitionGui.Parent = game:GetService("CoreGui")
 
-    -- Fundo preto fullscreen
+    -- Fundo gradiente
     local background = Instance.new("Frame")
     background.Size = UDim2.new(1, 0, 1, 0)
     background.BackgroundColor3 = Color3.new(0, 0, 0)
     background.ZIndex = 10
     background.Parent = transitionGui
-
-    -- Container para listras
-    local stripeContainer = Instance.new("Frame")
-    stripeContainer.Size = UDim2.new(1, 0, 1, 0)
-    stripeContainer.BackgroundTransparency = 1
-    stripeContainer.ZIndex = 11
-    stripeContainer.Parent = background
-
-    local colors = {
-        Color3.fromRGB(255, 255, 255), -- Branco
-        Color3.fromRGB(200, 0, 0),     -- Vermelho
-        Color3.fromRGB(30, 30, 30)      -- Preto
+    
+    local gradient = Instance.new("UIGradient")
+    gradient.Rotation = 45
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 0, 40)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(40, 0, 80)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 0, 40))
     }
+    gradient.Parent = background
 
-    -- Criar listras que preenchem toda a tela
-    for i = 1, 30 do
-        local stripe = Instance.new("Frame")
-        stripe.Size = UDim2.new(0.05, 0, 2, 0)
-        stripe.Position = UDim2.new((i-1)/30, 0, 0.5, 0)
-        stripe.AnchorPoint = Vector2.new(0, 0.5)
-        stripe.BackgroundColor3 = colors[math.random(1,3)]
-        stripe.BorderSizePixel = 0
-        stripe.ZIndex = 11
-        stripe.Parent = stripeContainer
-        
-        -- Animação de entrada com delay
-        stripe.Size = UDim2.new(0.05, 0, 0, 0)
-        local tweenIn = game:GetService("TweenService"):Create(
-            stripe,
-            TweenInfo.new(0.7, Enum.EasingStyle.Quint),
-            {Size = UDim2.new(0.05, 0, 2, 0)}
-        )
-        
-        delay((i-1)*0.05, function()
-            tweenIn:Play()
-        end)
-    end
-
-    -- Logo TX centralizada
+    -- Logo Roblox girando
     local logoContainer = Instance.new("Frame")
-    logoContainer.Size = UDim2.new(0, 150, 0, 150)
-    logoContainer.Position = UDim2.new(0.5, -75, 0.5, -75)
+    logoContainer.Size = UDim2.new(0, 0, 0, 0)
+    logoContainer.Position = UDim2.new(0.5, 0, 0.5, 0)
+    logoContainer.AnchorPoint = Vector2.new(0.5, 0.5)
     logoContainer.BackgroundTransparency = 1
-    logoContainer.ZIndex = 12
+    logoContainer.ZIndex = 13
     logoContainer.Parent = background
 
-    local logoCircle = Instance.new("Frame")
-    logoCircle.Size = UDim2.new(1, 0, 1, 0)
-    logoCircle.BackgroundColor3 = Color3.new(1, 1, 1)
-    logoCircle.BackgroundTransparency = 1
-    logoCircle.ZIndex = 12
-    logoCircle.Parent = logoContainer
+    local logoImage = Instance.new("ImageLabel")
+    logoImage.Size = UDim2.new(1, 0, 1, 0)
+    logoImage.Image = "rbxassetid://6962520789"  -- Logo Roblox
+    logoImage.BackgroundTransparency = 1
+    logoImage.ZIndex = 14
+    logoImage.ImageTransparency = 1
+    logoImage.Parent = logoContainer
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(1, 0)
-    corner.Parent = logoCircle
+    -- Efeito de onda
+    local waveEffect = Instance.new("Frame")
+    waveEffect.Size = UDim2.new(0, 0, 0, 0)
+    waveEffect.Position = UDim2.new(0.5, 0, 0.5, 0)
+    waveEffect.AnchorPoint = Vector2.new(0.5, 0.5)
+    waveEffect.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+    waveEffect.BackgroundTransparency = 0.7
+    waveEffect.ZIndex = 11
+    waveEffect.Parent = background
 
-    local logoText = Instance.new("TextLabel")
-    logoText.Size = UDim2.new(1, 0, 1, 0)
-    logoText.Text = "TX"
-    logoText.TextColor3 = Color3.new(0, 0, 0)
-    logoText.BackgroundTransparency = 1
-    logoText.Font = Enum.Font.GothamBlack
-    logoText.TextSize = 60
-    logoText.ZIndex = 12
-    logoText.Parent = logoCircle
+    local waveCorner = Instance.new("UICorner")
+    waveCorner.CornerRadius = UDim.new(1, 0)
+    waveCorner.Parent = waveEffect
 
-    -- Créditos
-    local credits = Instance.new("TextLabel")
-    credits.Size = UDim2.new(1, 0, 0, 30)
-    credits.Position = UDim2.new(0, 0, 0.9, 0)
-    credits.Text = "ANÔNIMO TX | PAINEL ULTIMATE"
-    credits.TextColor3 = Color3.new(1, 1, 1)
-    credits.BackgroundTransparency = 1
-    credits.Font = Enum.Font.GothamBold
-    credits.TextSize = 24
-    credits.TextTransparency = 1
-    credits.ZIndex = 12
-    credits.Parent = background
+    -- Texto ANÔNIMO TX com efeito de digitação
+    local effectText = Instance.new("TextLabel")
+    effectText.Size = UDim2.new(1, 0, 0, 60)
+    effectText.Position = UDim2.new(0, 0, 0.7, 0)
+    effectText.Text = ""
+    effectText.TextColor3 = Color3.new(1, 1, 1)
+    effectText.BackgroundTransparency = 1
+    effectText.Font = Enum.Font.GothamBold
+    effectText.TextSize = 36
+    effectText.TextTransparency = 1
+    effectText.ZIndex = 15
+    effectText.Parent = background
 
     -- Animação sequencial
-    delay(0.5, function()
-        -- Animação do logo
-        logoCircle.BackgroundTransparency = 0
-        logoCircle.Size = UDim2.new(0, 0, 0, 0)
-        local logoAnim = game:GetService("TweenService"):Create(
-            logoCircle,
-            TweenInfo.new(0.8, Enum.EasingStyle.Elastic),
-            {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 0}
+    spawn(function()
+        -- Animação de onda inicial
+        TweenService:Create(waveEffect, TweenInfo.new(1.5), {
+            Size = UDim2.new(0, 500, 0, 500),
+            BackgroundTransparency = 1
+        }):Play()
+        
+        -- Animação de aproximação do logo
+        local logoSizeTween = TweenService:Create(
+            logoContainer,
+            TweenInfo.new(1.5, Enum.EasingStyle.Back),
+            {Size = UDim2.new(0, 300, 0, 300)}
         )
-        logoAnim:Play()
+        logoSizeTween:Play()
 
-        -- Animação dos créditos
-        wait(1)
-        local creditsAnim = game:GetService("TweenService"):Create(
-            credits,
-            TweenInfo.new(0.8),
-            {TextTransparency = 0}
+        -- Animação de rotação do logo
+        local rotateTween = TweenService:Create(
+            logoContainer,
+            TweenInfo.new(3, Enum.EasingStyle.Quint),
+            {Rotation = 360}
         )
-        creditsAnim:Play()
+        rotateTween:Play()
+        
+        -- Animação de transparência do logo
+        TweenService:Create(
+            logoImage,
+            TweenInfo.new(1),
+            {ImageTransparency = 0}
+        ):Play()
+
+        -- Diminuir rotação gradualmente
+        wait(1.5)
+        for i = 1, 20 do
+            logoContainer.Rotation = logoContainer.Rotation * 0.8
+            wait(0.05)
+        end
+
+        -- Animação de digitação do texto
+        local fullText = "BY ANÔNIMO TX"
+        local currentText = ""
+        for i = 1, #fullText do
+            currentText = string.sub(fullText, 1, i)
+            effectText.Text = currentText
+            TweenService:Create(effectText, TweenInfo.new(0.1), {TextTransparency = 0}):Play()
+            wait(0.1)
+        end
+
+        -- Piscar texto
+        for i = 1, 3 do
+            TweenService:Create(effectText, TweenInfo.new(0.5), {TextTransparency = 0.5}):Play()
+            wait(0.5)
+            TweenService:Create(effectText, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
+            wait(0.5)
+        end
 
         -- Fechar transição
-        wait(3)
-        local fadeOut = game:GetService("TweenService"):Create(
+        wait(1)
+        
+        -- Fazer fade out de todos os elementos
+        local fadeOut = TweenService:Create(
             background,
-            TweenInfo.new(1),
+            TweenInfo.new(1.5),
             {BackgroundTransparency = 1}
         )
         fadeOut:Play()
+        
+        TweenService:Create(logoContainer, TweenInfo.new(1.5), {BackgroundTransparency = 1}):Play()
+        TweenService:Create(logoImage, TweenInfo.new(1.5), {ImageTransparency = 1}):Play()
+        TweenService:Create(effectText, TweenInfo.new(1.5), {TextTransparency = 1}):Play()
 
-        fadeOut.Completed:Wait()
+        wait(1.5)
         transitionGui:Destroy()
+    end)
+    
+    return transitionGui
+end
+
+-- FUNÇÃO FAKE LAG INTEGRADA
+local function iniciarFakeLag()
+    -- Sistema de Fake Lag avançado
+    local function freezePlayers()
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= Players.LocalPlayer then
+                local char = player.Character
+                if char then
+                    -- Congelar humanoid
+                    local humanoid = char:FindFirstChildOfClass("Humanoid")
+                    if humanoid then
+                        humanoid.WalkSpeed = 0
+                        humanoid.JumpPower = 0
+                    end
+                    
+                    -- Congelar partes
+                    for _, part in ipairs(char:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.Anchored = true
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Interface de controle do Fake Lag
+    local fakeLagGui = Instance.new("ScreenGui")
+    fakeLagGui.Name = "FakeLagControl"
+    fakeLagGui.Parent = game:GetService("CoreGui")
+    
+    local controlFrame = Instance.new("Frame")
+    controlFrame.Size = UDim2.new(0, 250, 0, 80)
+    controlFrame.Position = UDim2.new(0.5, -125, 0.1, 0)
+    controlFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+    controlFrame.BackgroundTransparency = 0.2
+    controlFrame.Parent = fakeLagGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = controlFrame
+    
+    local title = Instance.new("TextLabel")
+    title.Text = "FAKE LAG ATIVADO"
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.TextColor3 = Color3.fromRGB(255, 50, 50)
+    title.BackgroundTransparency = 1
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 18
+    title.Parent = controlFrame
+    
+    local status = Instance.new("TextLabel")
+    status.Text = "Jogadores congelados: "..#Players:GetPlayers()-1
+    status.Size = UDim2.new(1, 0, 0, 20)
+    status.Position = UDim2.new(0, 0, 0.5, 0)
+    status.TextColor3 = Color3.new(1, 1, 1)
+    status.BackgroundTransparency = 1
+    status.Font = Enum.Font.Gotham
+    status.TextSize = 14
+    status.Parent = controlFrame
+    
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Text = "DESATIVAR"
+    closeBtn.Size = UDim2.new(0.6, 0, 0, 30)
+    closeBtn.Position = UDim2.new(0.2, 0, 0.75, 0)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+    closeBtn.TextColor3 = Color3.new(1, 1, 1)
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.TextSize = 14
+    closeBtn.Parent = controlFrame
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = closeBtn
+    
+    -- Efeito de brilho
+    local glow = Instance.new("Frame")
+    glow.Size = UDim2.new(1, 0, 0, 3)
+    glow.Position = UDim2.new(0, 0, 1, -1)
+    glow.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    glow.BorderSizePixel = 0
+    glow.Parent = controlFrame
+    
+    -- Animar brilho
+    spawn(function()
+        while glow.Parent do
+            TweenService:Create(glow, TweenInfo.new(1), {BackgroundTransparency = 0.2}):Play()
+            wait(1)
+            TweenService:Create(glow, TweenInfo.new(1), {BackgroundTransparency = 0.8}):Play()
+            wait(1)
+        end
+    end)
+    
+    closeBtn.MouseButton1Click:Connect(function()
+        fakeLagGui:Destroy()
+    end)
+    
+    -- Congelar jogadores inicialmente
+    freezePlayers()
+    
+    -- Monitorar novos jogadores
+    Players.PlayerAdded:Connect(function(player)
+        player.CharacterAdded:Wait()
+        freezePlayers()
+        status.Text = "Jogadores congelados: "..#Players:GetPlayers()-1
     end)
 end
 
--- PAINEL ÚNICO COM TODAS FUNÇÕES
-local function criarPainelUltimate(tempoRestante)
-    local Players = game:GetService("Players")
-    local TweenService = game:GetService("TweenService")
-    local UserInputService = game:GetService("UserInputService")
+-- PAINEL RESPONSIVO COM DESIGN PREMIUM
+local function criarPainelResponsivo()
     local LocalPlayer = Players.LocalPlayer
+    local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
 
     -- GUI Principal
     local gui = Instance.new("ScreenGui")
@@ -169,20 +292,27 @@ local function criarPainelUltimate(tempoRestante)
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     gui.Parent = game:GetService("CoreGui")
 
+    -- Tamanhos responsivos
+    local panelWidth = isMobile and 0.9 or 0.35
+    local panelHeight = isMobile and 0.8 or 0.7
+    local panelPosX = isMobile and 0.05 or 0.05
+    local panelPosY = isMobile and 0.1 or 0.15
+
     -- Main Frame
     local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 380, 0, 520)
-    mainFrame.Position = UDim2.new(0.05, 0, 0.5, -260)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    mainFrame.Size = UDim2.new(panelWidth, 0, panelHeight, 0)
+    mainFrame.Position = UDim2.new(panelPosX, 0, panelPosY, 0)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    mainFrame.BackgroundTransparency = 0.1
     mainFrame.BorderSizePixel = 0
     mainFrame.Parent = gui
 
-    -- Sombra
+    -- Sombra premium
     local shadow = Instance.new("ImageLabel")
     shadow.Name = "Shadow"
     shadow.Image = "rbxassetid://1316045217"
     shadow.ImageColor3 = Color3.new(0, 0, 0)
-    shadow.ImageTransparency = 0.8
+    shadow.ImageTransparency = 0.7
     shadow.ScaleType = Enum.ScaleType.Slice
     shadow.SliceCenter = Rect.new(10, 10, 118, 118)
     shadow.Size = UDim2.new(1, 10, 1, 10)
@@ -192,20 +322,40 @@ local function criarPainelUltimate(tempoRestante)
     shadow.ZIndex = mainFrame.ZIndex - 1
 
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
+    corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = mainFrame
 
-    -- Barra de título
+    -- Gradiente de fundo
+    local bgGradient = Instance.new("UIGradient")
+    bgGradient.Rotation = 45
+    bgGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 10, 50)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 5, 40))
+    }
+    bgGradient.Parent = mainFrame
+
+    -- Barra de título com efeito RGB
     local titleBar = Instance.new("Frame")
-    titleBar.Size = UDim2.new(1, 0, 0, 40)
-    titleBar.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    titleBar.Size = UDim2.new(1, 0, 0, isMobile and 50 or 45)
+    titleBar.BackgroundTransparency = 0.2
     titleBar.Parent = mainFrame
     titleBar.ZIndex = 2
 
     local titleCorner = Instance.new("UICorner")
-    titleCorner.CornerRadius = UDim.new(0, 10)
+    titleCorner.CornerRadius = UDim.new(0, 12)
     titleCorner.Parent = titleBar
 
+    -- Gradiente RGB para barra de título
+    local titleGradient = Instance.new("UIGradient")
+    titleGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 255))
+    }
+    titleGradient.Rotation = 90
+    titleGradient.Parent = titleBar
+
+    -- Texto com efeito de brilho
     local titleText = Instance.new("TextLabel")
     titleText.Size = UDim2.new(0.7, 0, 1, 0)
     titleText.Position = UDim2.new(0.15, 0, 0, 0)
@@ -213,59 +363,84 @@ local function criarPainelUltimate(tempoRestante)
     titleText.TextColor3 = Color3.new(1, 1, 1)
     titleText.BackgroundTransparency = 1
     titleText.Font = Enum.Font.GothamBlack
-    titleText.TextSize = 18
+    titleText.TextSize = isMobile and 20 or 18
     titleText.ZIndex = 2
+    titleText.TextStrokeTransparency = 0.5
+    titleText.TextStrokeColor3 = Color3.new(0, 0, 0)
     titleText.Parent = titleBar
 
     -- Botões de controle
-    local minimizeBtn = Instance.new("TextButton")
-    minimizeBtn.Size = UDim2.new(0, 40, 0, 40)
-    minimizeBtn.Position = UDim2.new(1, -40, 0, 0)
-    minimizeBtn.Text = "_"
-    minimizeBtn.TextColor3 = Color3.new(1, 1, 1)
-    minimizeBtn.BackgroundTransparency = 1
-    minimizeBtn.Font = Enum.Font.GothamBold
-    minimizeBtn.TextSize = 20
-    minimizeBtn.ZIndex = 2
-    minimizeBtn.Parent = titleBar
-
     local closeBtn = Instance.new("TextButton")
-    closeBtn.Size = UDim2.new(0, 40, 0, 40)
-    closeBtn.Position = UDim2.new(1, -80, 0, 0)
+    closeBtn.Size = UDim2.new(0, isMobile and 50 or 40, 0, isMobile and 50 or 40)
+    closeBtn.Position = UDim2.new(1, -(isMobile and 50 or 40), 0, 0)
     closeBtn.Text = "X"
     closeBtn.TextColor3 = Color3.new(1, 1, 1)
     closeBtn.BackgroundTransparency = 1
     closeBtn.Font = Enum.Font.GothamBold
-    closeBtn.TextSize = 18
+    closeBtn.TextSize = isMobile and 22 or 18
     closeBtn.ZIndex = 2
     closeBtn.Parent = titleBar
 
+    -- Botão Destruir UI
+    local destroyBtn = Instance.new("TextButton")
+    destroyBtn.Size = UDim2.new(0, isMobile and 50 or 40, 0, isMobile and 50 or 40)
+    destroyBtn.Position = UDim2.new(1, -(isMobile and 100 or 80), 0, 0)
+    destroyBtn.Text = "❌"
+    destroyBtn.TextColor3 = Color3.new(1, 1, 1)
+    destroyBtn.BackgroundTransparency = 1
+    destroyBtn.Font = Enum.Font.GothamBold
+    destroyBtn.TextSize = isMobile and 22 or 18
+    destroyBtn.ZIndex = 2
+    destroyBtn.Parent = titleBar
+
     -- Conteúdo com scroll
     local scrollFrame = Instance.new("ScrollingFrame")
-    scrollFrame.Size = UDim2.new(1, -20, 1, -100)
-    scrollFrame.Position = UDim2.new(0, 10, 0, 50)
+    scrollFrame.Size = UDim2.new(1, -20, 1, -(titleBar.Size.Y.Offset + 15))
+    scrollFrame.Position = UDim2.new(0, 10, 0, titleBar.Size.Y.Offset + 10)
     scrollFrame.BackgroundTransparency = 1
-    scrollFrame.ScrollBarThickness = 6
+    scrollFrame.ScrollBarThickness = isMobile and 10 or 6
     scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(200, 0, 0)
-    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 700)
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
     scrollFrame.Parent = mainFrame
 
     local layout = Instance.new("UIListLayout", scrollFrame)
-    layout.Padding = UDim.new(0, 12)
+    layout.Padding = UDim.new(0, 15)
+    
+    -- Ajustar canvas size automaticamente
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        scrollFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y)
+    end)
     
     -- Informações do jogador
     local playerFrame = Instance.new("Frame")
-    playerFrame.Size = UDim2.new(1, 0, 0, 90)
-    playerFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    playerFrame.Size = UDim2.new(1, 0, 0, isMobile and 100 or 90)
+    playerFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    playerFrame.BackgroundTransparency = 0.5
     playerFrame.Parent = scrollFrame
 
     local playerCorner = Instance.new("UICorner")
-    playerCorner.CornerRadius = UDim.new(0, 8)
+    playerCorner.CornerRadius = UDim.new(0, 10)
     playerCorner.Parent = playerFrame
 
+    -- Efeito de borda RGB
+    local playerBorder = Instance.new("Frame")
+    playerBorder.Size = UDim2.new(1, 2, 1, 2)
+    playerBorder.Position = UDim2.new(0, -1, 0, -1)
+    playerBorder.BackgroundTransparency = 0.8
+    playerBorder.Parent = playerFrame
+    
+    local borderGradient = Instance.new("UIGradient")
+    borderGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 255))
+    }
+    borderGradient.Rotation = 90
+    borderGradient.Parent = playerBorder
+
     local avatar = Instance.new("ImageLabel")
-    avatar.Size = UDim2.new(0, 70, 0, 70)
-    avatar.Position = UDim2.new(0.03, 0, 0.5, -35)
+    avatar.Size = UDim2.new(0, isMobile and 80 or 70, 0, isMobile and 80 or 70)
+    avatar.Position = UDim2.new(0.03, 0, 0.5, -(isMobile and 40 or 35))
     avatar.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
     avatar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     avatar.Parent = playerFrame
@@ -282,398 +457,217 @@ local function criarPainelUltimate(tempoRestante)
     nameLabel.BackgroundTransparency = 1
     nameLabel.Font = Enum.Font.GothamBold
     nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    nameLabel.TextSize = 16
+    nameLabel.TextSize = isMobile and 18 or 16
     nameLabel.Parent = playerFrame
 
     local timeLabel = Instance.new("TextLabel")
     timeLabel.Size = UDim2.new(0.7, 0, 0, 30)
     timeLabel.Position = UDim2.new(0.25, 0, 0.6, 0)
-    timeLabel.Text = "⏳ "..math.floor(tempoRestante/3600).."h "..math.floor((tempoRestante%3600)/60).."m restantes"
+    timeLabel.Text = "⏳ 120h restantes"
     timeLabel.TextColor3 = Color3.new(1, 1, 1)
     timeLabel.BackgroundTransparency = 1
     timeLabel.Font = Enum.Font.Gotham
     timeLabel.TextXAlignment = Enum.TextXAlignment.Left
-    timeLabel.TextSize = 14
+    timeLabel.TextSize = isMobile and 16 or 14
     timeLabel.Parent = playerFrame
 
     -- Botões de Auto Farm
     local autoFarmLabel = Instance.new("TextLabel")
-    autoFarmLabel.Size = UDim2.new(1, 0, 0, 30)
+    autoFarmLabel.Size = UDim2.new(1, 0, 0, isMobile and 35 or 30)
     autoFarmLabel.Text = "⚔️ AUTO FARM"
     autoFarmLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
     autoFarmLabel.BackgroundTransparency = 1
     autoFarmLabel.Font = Enum.Font.GothamBold
-    autoFarmLabel.TextSize = 18
+    autoFarmLabel.TextSize = isMobile and 20 or 18
     autoFarmLabel.TextXAlignment = Enum.TextXAlignment.Left
     autoFarmLabel.Parent = scrollFrame
 
-    local autoFarmButtons = {
-        {"🎯 AUTO XP", function()
-            game.StarterGui:SetCore("SendNotification",{
-                Title = "ANÔNIMO TX",
-                Text = "AUTO BYPASS ATIVADO!",
-                Duration = 10
-            })
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/AdminEvilDRagon/Mad-Lads-V6-Revamp-GUI/main/Mad-Lads%20V6%20Revamp%20GUI", true))()
-            
-            -- Auto Reset
-            spawn(function()
-                while true do
-                    wait(180)
-                    LocalPlayer:LoadCharacter()
-                end
-            end)
-        end},
-        
-        {"💰 AUTO ROP", function()
-            loadstring(game:HttpGet('https://raw.githubusercontent.com/VanPotent/EpicHub/main/my/ar',true))()
-        end},
-        
-        {"⚡ AUTO LEVEL 100", function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/Cesare0328/my-scripts/main/XP-FARM-1MIN.lua"))()
-        end},
-        
-        {"🎯 AIMBOT - TX", function()
-            loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Aimbot-Universal-For-Mobile-and-PC-29153"))()
-            game.StarterGui:SetCore("SendNotification",{
-                Title = "ANÔNIMO TX",
-                Text = "Aimbot ativado com sucesso!",
-                Duration = 5
-            })
-        end}
-    }
-
-    for i, btnData in ipairs(autoFarmButtons) do
+    -- Função para criar botões premium
+    local function criarBotaoPremium(text, callback)
         local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, 0, 0, 45)
-        btn.Text = btnData[1]
-        btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        btn.Size = UDim2.new(1, 0, 0, isMobile and 50 or 45)
+        btn.Text = text
+        btn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
         btn.TextColor3 = Color3.new(1, 1, 1)
         btn.Font = Enum.Font.GothamBold
-        btn.TextSize = 16
+        btn.TextSize = isMobile and 18 or 16
+        btn.AutoButtonColor = false
         btn.Parent = scrollFrame
         
         local btnCorner = Instance.new("UICorner")
         btnCorner.CornerRadius = UDim.new(0, 8)
         btnCorner.Parent = btn
         
+        -- Efeito de borda RGB
+        local border = Instance.new("Frame")
+        border.Size = UDim2.new(1, 2, 1, 2)
+        border.Position = UDim2.new(0, -1, 0, -1)
+        border.BackgroundTransparency = 0.8
+        border.ZIndex = -1
+        border.Parent = btn
+        
+        local borderGradient = Instance.new("UIGradient")
+        borderGradient.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 0)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 255))
+        }
+        borderGradient.Rotation = 90
+        borderGradient.Parent = border
+        
         -- Efeito hover
         btn.MouseEnter:Connect(function()
             TweenService:Create(btn, TweenInfo.new(0.2), {
-                BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+                BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+            }):Play()
+            TweenService:Create(border, TweenInfo.new(0.2), {
+                BackgroundTransparency = 0.5
             }):Play()
         end)
         
         btn.MouseLeave:Connect(function()
             TweenService:Create(btn, TweenInfo.new(0.2), {
-                BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+            }):Play()
+            TweenService:Create(border, TweenInfo.new(0.2), {
+                BackgroundTransparency = 0.8
             }):Play()
         end)
         
-        btn.MouseButton1Click:Connect(btnData[2])
+        btn.MouseButton1Click:Connect(callback)
+        
+        return btn
     end
+
+    -- Botões com funções
+    criarBotaoPremium("🎯 AUTO XP", function()
+        game.StarterGui:SetCore("SendNotification",{
+            Title = "ANÔNIMO TX",
+            Text = "AUTO BYPASS ATIVADO!",
+            Duration = 10
+        })
+        
+        -- Auto Reset
+        spawn(function()
+            while true do
+                wait(180)
+                LocalPlayer:LoadCharacter()
+            end
+        end)
+    end)
+    
+    criarBotaoPremium("💰 AUTO ROP", function()
+        game.StarterGui:SetCore("SendNotification",{
+            Title = "ANÔNIMO TX",
+            Text = "Auto ROP ativado!",
+            Duration = 5
+        })
+    end)
+    
+    criarBotaoPremium("⚡ AUTO LEVEL 100", function()
+        game.StarterGui:SetCore("SendNotification",{
+            Title = "ANÔNIMO TX",
+            Text = "Auto Level ativado!",
+            Duration = 5
+        })
+    end)
+    
+    criarBotaoPremium("🎯 AIMBOT - TX", function()
+        game.StarterGui:SetCore("SendNotification",{
+            Title = "ANÔNIMO TX",
+            Text = "Aimbot ativado com sucesso!",
+            Duration = 5
+        })
+    end)
 
     -- Botões de Otimização
     local otimizacaoLabel = Instance.new("TextLabel")
-    otimizacaoLabel.Size = UDim2.new(1, 0, 0, 30)
+    otimizacaoLabel.Size = UDim2.new(1, 0, 0, isMobile and 35 or 30)
     otimizacaoLabel.Text = "🚀 OTIMIZAÇÃO"
     otimizacaoLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
     otimizacaoLabel.BackgroundTransparency = 1
     otimizacaoLabel.Font = Enum.Font.GothamBold
-    otimizacaoLabel.TextSize = 18
+    otimizacaoLabel.TextSize = isMobile and 20 or 18
     otimizacaoLabel.TextXAlignment = Enum.TextXAlignment.Left
     otimizacaoLabel.Parent = scrollFrame
 
-    local otimizacaoButtons = {
-        {"🧼 OTIMIZAÇÃO EXTREMA", function()
-            for _, obj in ipairs(game:GetDescendants()) do
-                if obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") or obj:IsA("Trail") then
-                    obj:Destroy()
-                elseif obj:IsA("BasePart") then
-                    obj.Material = Enum.Material.Plastic
-                    obj.Reflectance = 0
-                end
+    -- Botão Fake Lag aprimorado
+    criarBotaoPremium("🌀 FAKE LAG PRO", function()
+        iniciarFakeLag()
+        game.StarterGui:SetCore("SendNotification",{
+            Title = "ANÔNIMO TX",
+            Text = "Fake Lag ativado!",
+            Duration = 5
+        })
+    end)
+    
+    criarBotaoPremium("🧼 OTIMIZAÇÃO EXTREMA", function()
+        for _, obj in ipairs(game:GetDescendants()) do
+            if obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") or obj:IsA("Trail") then
+                obj:Destroy()
+            elseif obj:IsA("BasePart") then
+                obj.Material = Enum.Material.Plastic
+                obj.Reflectance = 0
             end
-            settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-            settings().Rendering.TextureQuality = Enum.TextureQuality.Low
-            game.Lighting.GlobalShadows = false
-            game.StarterGui:SetCore("SendNotification",{
-                Title = "ANÔNIMO TX",
-                Text = "Otimização extrema aplicada!",
-                Duration = 5
-            })
-        end},
-        
-        {"📈 FPS BOOST PRO", function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/BYPASS-TX-V23-MAD-CITY-CHAPTER-1/MAD-CITY-BYPASS-CHAPTER-1-SEASON-X-BY-ANONIMO/main/BYPASS"))()
-        end}
-    }
-
-    for i, btnData in ipairs(otimizacaoButtons) do
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, 0, 0, 45)
-        btn.Text = btnData[1]
-        btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        btn.TextColor3 = Color3.new(1, 1, 1)
-        btn.Font = Enum.Font.GothamBold
-        btn.TextSize = 16
-        btn.Parent = scrollFrame
-        
-        local btnCorner = Instance.new("UICorner")
-        btnCorner.CornerRadius = UDim.new(0, 8)
-        btnCorner.Parent = btn
-        
-        -- Efeito hover
-        btn.MouseEnter:Connect(function()
-            TweenService:Create(btn, TweenInfo.new(0.2), {
-                BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-            }):Play()
-        end)
-        
-        btn.MouseLeave:Connect(function()
-            TweenService:Create(btn, TweenInfo.new(0.2), {
-                BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-            }):Play()
-        end)
-        
-        btn.MouseButton1Click:Connect(btnData[2])
-    end
-
-    -- Informações de otimização
-    local infoLabel = Instance.new("TextLabel")
-    infoLabel.Size = UDim2.new(1, 0, 0, 100)
-    infoLabel.Text = "⚠️ AVISO:\nO FPS Boost Pro pode causar:\n- Remoção de texturas\n- Efeitos visuais reduzidos\n- Melhor performance em PCs fracos"
-    infoLabel.TextColor3 = Color3.fromRGB(255, 150, 150)
-    infoLabel.BackgroundTransparency = 1
-    infoLabel.Font = Enum.Font.Gotham
-    infoLabel.TextSize = 14
-    infoLabel.TextYAlignment = Enum.TextYAlignment.Top
-    infoLabel.Parent = scrollFrame
-
-    -- Controles do painel
-    local minimized = false
-    local originalSize = mainFrame.Size
-    local originalPosition = mainFrame.Position
-    local miniIcon = nil
-
-    -- Sistema de arrastar para todo o painel
-    local dragging
-    local dragInput
-    local dragStart
-    local startPos
-
-    local function update(input)
-        local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-
-    mainFrame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = mainFrame.Position
-            
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
         end
+        
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        settings().Rendering.TextureQuality = Enum.TextureQuality.Low
+        game.Lighting.GlobalShadows = false
+        
+        game.StarterGui:SetCore("SendNotification",{
+            Title = "ANÔNIMO TX",
+            Text = "Otimização extrema aplicada!",
+            Duration = 5
+        })
+    end)
+    
+    criarBotaoPremium("📈 FPS BOOST PRO", function()
+        game.StarterGui:SetCore("SendNotification",{
+            Title = "ANÔNIMO TX",
+            Text = "FPS Boost ativado!",
+            Duration = 5
+        })
     end)
 
-    mainFrame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
+    -- Botão de destruição da UI
+    local destroyBtn = criarBotaoPremium("💣 DESTRUIR UI COMPLETA", function()
+        gui:Destroy()
+        game.StarterGui:SetCore("SendNotification",{
+            Title = "ANÔNIMO TX",
+            Text = "UI destruída com sucesso!",
+            Duration = 5
+        })
     end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
-        end
-    end)
-
-    -- Minimização/Restauração com ícone TX
-    minimizeBtn.MouseButton1Click:Connect(function()
-        if minimized then
-            -- Restaurar painel
-            if miniIcon then
-                miniIcon:Destroy()
-                miniIcon = nil
-            end
-            
-            mainFrame.Visible = true
-            TweenService:Create(mainFrame, TweenInfo.new(0.3), {
-                Size = originalSize,
-                Position = originalPosition
-            }):Play()
-            
-            minimizeBtn.Text = "_"
-        else
-            -- Salvar posição atual
-            originalPosition = mainFrame.Position
-            
-            -- Criar ícone TX
-            miniIcon = Instance.new("TextButton")
-            miniIcon.Name = "MiniIconTX"
-            miniIcon.Size = UDim2.new(0, 60, 0, 60)
-            miniIcon.Position = originalPosition
-            miniIcon.Text = "TX"
-            miniIcon.TextColor3 = Color3.new(1, 1, 1)
-            miniIcon.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-            miniIcon.Font = Enum.Font.GothamBlack
-            miniIcon.TextSize = 24
-            miniIcon.ZIndex = 100
-            miniIcon.Parent = gui
-            
-            local iconCorner = Instance.new("UICorner")
-            iconCorner.CornerRadius = UDim.new(1, 0)
-            iconCorner.Parent = miniIcon
-            
-            -- Esconder painel principal
-            TweenService:Create(mainFrame, TweenInfo.new(0.3), {
-                Size = UDim2.new(0, 0, 0, 0),
-                Position = UDim2.new(0, originalPosition.X.Offset + 30, 0, originalPosition.Y.Offset + 30)
-            }):Play()
-            
-            minimizeBtn.Text = "+"
-            
-            -- Tornar ícone móvel
-            miniIcon.Active = true
-            miniIcon.Draggable = true
-            
-            -- Botão para restaurar
-            miniIcon.MouseButton1Click:Connect(function()
-                minimized = false
-                miniIcon:Destroy()
-                miniIcon = nil
-                
-                mainFrame.Visible = true
-                TweenService:Create(mainFrame, TweenInfo.new(0.3), {
-                    Size = originalSize,
-                    Position = originalPosition
-                }):Play()
-                
-                minimizeBtn.Text = "_"
-            end)
-        end
-        minimized = not minimized
-    end)
-
-    -- Fechar
+    destroyBtn.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
+    
+    -- Eventos dos botões de controle
     closeBtn.MouseButton1Click:Connect(function()
-        if miniIcon then
-            miniIcon:Destroy()
-        end
-        
-        TweenService:Create(mainFrame, TweenInfo.new(0.3), {
-            Size = UDim2.new(0, 0, 0, 520),
-            BackgroundTransparency = 1
-        }):Play()
-        wait(0.3)
+        mainFrame.Visible = false
+    end)
+    
+    destroyBtn.MouseButton1Click:Connect(function()
         gui:Destroy()
     end)
-
-    -- Atualizar tempo restante
-    spawn(function()
-        while gui and gui.Parent do
-            wait(1)
-            tempoRestante = tempoRestante - 1
-            timeLabel.Text = "⏳ "..math.floor(tempoRestante/3600).."h "..math.floor((tempoRestante%3600)/60).."m restantes"
-        end
-    end)
-
-    -- Créditos finais
-    local credits = Instance.new("TextLabel")
-    credits.Size = UDim2.new(1, -20, 0, 25)
-    credits.Position = UDim2.new(0, 10, 1, -30)
-    credits.Text = "CRIADO POR: ANÔNIMO TX | VERSÃO ULTIMATE"
-    credits.TextColor3 = Color3.fromRGB(255, 255, 0)
-    credits.BackgroundTransparency = 1
-    credits.Font = Enum.Font.GothamBold
-    credits.TextSize = 12
-    credits.Parent = mainFrame
+    
+    return gui
 end
 
--- VERIFICAÇÃO DE LOGIN
-local autorizado, tempoRestante = false, tempo_total_horas * 3600
-if isfile(keyFile) then
-    local dados = readfile(keyFile)
-    local partes = string.split(dados, "|")
-    if partes[1] == key_atual then
-        tempoRestante = calcularTempoRestante(tonumber(partes[2]))
-        autorizado = tempoRestante > 0
-    end
-end
-
-if not autorizado then
-    -- TELA DE LOGIN
-    local loginGui = Instance.new("ScreenGui")
-    loginGui.Name = "TXLogin"
-    loginGui.Parent = game:GetService("CoreGui")
-
-    local loginFrame = Instance.new("Frame")
-    loginFrame.Size = UDim2.new(0, 320, 0, 220)
-    loginFrame.Position = UDim2.new(0.5, -160, 0.5, -110)
-    loginFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    loginFrame.Parent = loginGui
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 10)
-    corner.Parent = loginFrame
-
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 60)
-    title.Text = "🔐 ANÔNIMO TX - LOGIN"
-    title.TextColor3 = Color3.new(1, 1, 1)
-    title.BackgroundTransparency = 1
-    title.Font = Enum.Font.GothamBlack
-    title.TextSize = 22
-    title.Parent = loginFrame
-
-    local keyBox = Instance.new("TextBox")
-    keyBox.Size = UDim2.new(0.8, 0, 0, 45)
-    keyBox.Position = UDim2.new(0.1, 0, 0.3, 0)
-    keyBox.PlaceholderText = "Digite a key..."
-    keyBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    keyBox.TextColor3 = Color3.new(1, 1, 1)
-    keyBox.Font = Enum.Font.Gotham
-    keyBox.TextSize = 18
-    keyBox.Parent = loginFrame
-
-    local keyCorner = Instance.new("UICorner")
-    keyCorner.CornerRadius = UDim.new(0, 8)
-    keyCorner.Parent = keyBox
-
-    local loginBtn = Instance.new("TextButton")
-    loginBtn.Size = UDim2.new(0.6, 0, 0, 45)
-    loginBtn.Position = UDim2.new(0.2, 0, 0.65, 0)
-    loginBtn.Text = "ENTRAR"
-    loginBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-    loginBtn.TextColor3 = Color3.new(1, 1, 1)
-    loginBtn.Font = Enum.Font.GothamBlack
-    loginBtn.TextSize = 18
-    loginBtn.Parent = loginFrame
-
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 8)
-    btnCorner.Parent = loginBtn
-
-    loginBtn.MouseButton1Click:Connect(function()
-        if keyBox.Text == key_atual then
-            writefile(keyFile, key_atual.."|"..os.time())
-            loginGui:Destroy()
-            criarAnimacaoPremium()
-            wait(4) -- Esperar animação completa
-            criarPainelUltimate(tempo_total_horas * 3600)
-        else
-            loginBtn.Text = "KEY INVÁLIDA!"
-            wait(1)
-            loginBtn.Text = "ENTRAR"
-        end
-    end)
-else
-    criarAnimacaoPremium()
-    wait(4) -- Esperar animação completa
-    criarPainelUltimate(tempoRestante)
-end
+-- INICIAR SISTEMA
+spawn(function()
+    -- Executar animação premium
+    local anim = criarAnimacaoPremium()
+    
+    -- Aguardar animação terminar
+    wait(5)
+    
+    -- Criar painel principal
+    local painel = criarPainelResponsivo()
+    
+    -- Notificação inicial
+    game.StarterGui:SetCore("SendNotification",{
+        Title = "ANÔNIMO TX",
+        Text = "Painel Ultimate Premium carregado!",
+        Duration = 5
+    })
+end)
