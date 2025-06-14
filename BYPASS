@@ -1,17 +1,12 @@
 --[[
-    ANÔNIMO TX - FPS BOOST PRO EDITION
+    ANÔNIMO TX - FPS BOOST EXTREMO
     Recursos:
-    - GUI flutuante moderna com sombras e efeitos
-    - Níveis: Baixo, Médio, Alto, Máximo
-    - Botão de Otimização Automática
-    - Monitor de FPS e Memória em tempo real
-    - Sistema de Notificações (Sucesso/Falha)
-    - Ajuste de Distância de Renderização
-    - Limpeza de Texturas, Partículas, Luzes, Efeitos, Sons e Objetos
-    - Nível Máximo remove objetos agressivamente para melhor performance
-    - Botão para Mostrar/Esconder a Interface
-    - Confirmação antes da Limpeza Máxima
-    - CRÉDITOS: ANÔNIMO TX
+    - Remoção total de texturas
+    - Congelamento de personagens distantes
+    - Auto-limpeza de memória em loop
+    - Renderização otimizada por distância
+    - Remoção de skins e roupas
+    - Controle total de iluminação
 --]]
 
 local Players = game:GetService("Players")
@@ -22,7 +17,11 @@ local Stats = game:GetService("Stats")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
--- Funções auxiliares de otimização
+-- Configurações
+local RENDER_DISTANCE = 50  -- Distância máxima de renderização
+local CLEANUP_INTERVAL = 10 -- Intervalo de limpeza em segundos
+
+-- Funções auxiliares
 local function removeIf(obj, condition)
     if condition and obj and obj.Parent then
         pcall(function()
@@ -34,13 +33,179 @@ end
 local function isFarAway(obj, cam)
     if obj:IsA("BasePart") then
         local dist = (cam.CFrame.Position - obj.Position).Magnitude
-        return dist > 120
+        return dist > RENDER_DISTANCE
     end
     return false
 end
 
--- Variável para controle do loop de otimização contínua
-local optimizationThread = nil
+-- Sistema de limpeza de memória
+local function clearMemoryCache()
+    for _, service in ipairs({Workspace, Lighting}) do
+        for _, obj in ipairs(service:GetDescendants()) do
+            pcall(function()
+                if obj:IsA("Texture") or obj:IsA("Decal") then
+                    obj.Texture = ""
+                end
+            end)
+        end
+    end
+    
+    for i = 1, 3 do
+        collectgarbage("collect")
+        task.wait(0.1)
+    end
+end
+
+-- Função para congelar e esconder personagens
+local function handleDistantCharacters(cam)
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local char = player.Character
+            if char then
+                local root = char:FindFirstChild("HumanoidRootPart")
+                if root then
+                    local dist = (cam.CFrame.Position - root.Position).Magnitude
+                    
+                    if dist > RENDER_DISTANCE then
+                        for _, part in ipairs(char:GetDescendants()) do
+                            pcall(function()
+                                if part:IsA("BasePart") then
+                                    part.Transparency = 1
+                                    part.CanCollide = false
+                                end
+                            end)
+                        end
+                        
+                        for _, accessory in ipairs(char:GetDescendants()) do
+                            pcall(function()
+                                if accessory:IsA("Accessory") or 
+                                   accessory:IsA("Clothing") or 
+                                   accessory:IsA("Shirt") or 
+                                   accessory:IsA("Pants") then
+                                    accessory:Destroy()
+                                end
+                            end)
+                        end
+                        
+                        local humanoid = char:FindFirstChild("Humanoid")
+                        if humanoid then
+                            pcall(function()
+                                humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+                                humanoid.WalkSpeed = 0
+                                humanoid.JumpPower = 0
+                            end)
+                        end
+                    else
+                        for _, part in ipairs(char:GetDescendants()) do
+                            pcall(function()
+                                if part:IsA("BasePart") then
+                                    part.Transparency = 0
+                                end
+                            end)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Função principal de otimização
+function updateOptimization()
+    local cam = Workspace.CurrentCamera
+    if not cam then return end
+
+    -- 1. Remover todas as texturas
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if obj:IsA("Texture") or obj:IsA("Decal") then
+                obj.Texture = ""
+            end
+            
+            if obj:IsA("BasePart") then
+                obj.Material = Enum.Material.Plastic
+                obj.Reflectance = 0
+                obj.CastShadow = false
+            end
+        end)
+    end
+
+    -- 2. Eliminar luzes e sombras
+    Lighting.GlobalShadows = false
+    Lighting.FogEnd = RENDER_DISTANCE * 1.5
+    
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
+                obj.Enabled = false
+            end
+        end)
+    end
+
+    -- 3. Objetos distantes
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if isFarAway(obj, cam) then
+                if obj:IsA("ParticleEmitter") or obj:IsA("Smoke") or obj:IsA("Fire") then
+                    removeIf(obj, true)
+                end
+                
+                if obj:IsA("AnimationController") or obj:IsA("Animator") then
+                    removeIf(obj, true)
+                end
+                
+                if obj:IsA("BasePart") then
+                    obj.Transparency = 0.9
+                    obj.CanCollide = false
+                end
+            end
+        end)
+    end
+
+    -- 4. Remover skins e roupas
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character then
+            for _, item in ipairs(player.Character:GetDescendants()) do
+                pcall(function()
+                    if item:IsA("Accessory") or item:IsA("Clothing") or 
+                       item:IsA("Shirt") or item:IsA("Pants") then
+                        removeIf(item, true)
+                    end
+                    
+                    if item:IsA("Decal") then
+                        item.Texture = ""
+                    end
+                end)
+            end
+        end
+    end
+
+    -- 5. Manipular personagens
+    handleDistantCharacters(cam)
+
+    -- 6. Limpeza de memória
+    clearMemoryCache()
+end
+
+-- Sistema de limpeza automática
+local autoCleanEnabled = false
+local autoCleanThread = nil
+
+local function startAutoClean()
+    if autoCleanThread then
+        autoCleanEnabled = false
+        task.wait(0.2)
+    end
+    
+    autoCleanEnabled = true
+    autoCleanThread = task.spawn(function()
+        while autoCleanEnabled do
+            updateOptimization()
+            task.wait(CLEANUP_INTERVAL)
+        end
+        autoCleanThread = nil
+    end)
+end
 
 -- Configuração da GUI
 local screenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
@@ -49,14 +214,13 @@ screenGui.ResetOnSpawn = false
 
 -- Botão de Alternar
 local toggleButton = Instance.new("TextButton", screenGui)
-toggleButton.Size = UDim2.new(0, 140, 0, 32)
+toggleButton.Size = UDim2.new(0, 160, 0, 35)
 toggleButton.Position = UDim2.new(0, 20, 0, 20)
 toggleButton.Text = "Mostrar FPS Boost"
-toggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 90)
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
 toggleButton.TextColor3 = Color3.new(1, 1, 1)
 toggleButton.Font = Enum.Font.GothamBold
 toggleButton.TextSize = 14
-toggleButton.AutoButtonColor = true
 local toggleCorner = Instance.new("UICorner", toggleButton)
 toggleCorner.CornerRadius = UDim.new(0, 8)
 
@@ -72,7 +236,6 @@ local function notify(message, success)
     notif.Font = Enum.Font.GothamBold
     notif.TextSize = 18
     notif.AnchorPoint = Vector2.new(0.5, 0)
-    notif.BorderSizePixel = 0
     local notifCorner = Instance.new("UICorner", notif)
     notifCorner.CornerRadius = UDim.new(0, 6)
 
@@ -86,78 +249,40 @@ end
 
 -- Display de FPS e Memória
 local fpsLabel = Instance.new("TextLabel", screenGui)
-fpsLabel.Size = UDim2.new(0, 160, 0, 25)
-fpsLabel.Position = UDim2.new(0, 180, 0, 20)
-fpsLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+fpsLabel.Size = UDim2.new(0, 180, 0, 30)
+fpsLabel.Position = UDim2.new(0, 190, 0, 20)
+fpsLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 fpsLabel.BackgroundTransparency = 0.3
 fpsLabel.TextColor3 = Color3.new(1, 1, 1)
-fpsLabel.Font = Enum.Font.Gotham
+fpsLabel.Font = Enum.Font.GothamBold
 fpsLabel.TextSize = 14
 fpsLabel.Text = "FPS: 0 | Mem: 0MB"
-fpsLabel.BorderSizePixel = 0
 local fpsCorner = Instance.new("UICorner", fpsLabel)
 fpsCorner.CornerRadius = UDim.new(0, 6)
 
 -- Label de Status
 local statusLabel = Instance.new("TextLabel", screenGui)
 statusLabel.Size = UDim2.new(0, 300, 0, 25)
-statusLabel.Position = UDim2.new(0, 10, 0, 60)
+statusLabel.Position = UDim2.new(0, 20, 0, 60)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
 statusLabel.Font = Enum.Font.GothamBold
 statusLabel.TextSize = 16
 statusLabel.Text = "Status: Aguardando..."
 
--- Popup de Confirmação
-local confirmFrame = Instance.new("Frame", screenGui)
-confirmFrame.Size = UDim2.new(0, 300, 0, 120)
-confirmFrame.Position = UDim2.new(0.5, -150, 0.5, -60)
-confirmFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-confirmFrame.Visible = false
-confirmFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-local confirmCorner = Instance.new("UICorner", confirmFrame)
-confirmCorner.CornerRadius = UDim.new(0, 10)
-
-local confirmText = Instance.new("TextLabel", confirmFrame)
-confirmText.Size = UDim2.new(1, -20, 0, 60)
-confirmText.Position = UDim2.new(0, 10, 0, 5)
-confirmText.BackgroundTransparency = 1
-confirmText.TextColor3 = Color3.new(1, 1, 1)
-confirmText.TextWrapped = true
-confirmText.Text = "Todas texturas e objetos serão removidos. Tem certeza?"
-confirmText.Font = Enum.Font.Gotham
-confirmText.TextSize = 16
-
-local yesBtn = Instance.new("TextButton", confirmFrame)
-yesBtn.Size = UDim2.new(0.45, -5, 0, 30)
-yesBtn.Position = UDim2.new(0, 10, 1, -40)
-yesBtn.Text = "Sim"
-yesBtn.BackgroundColor3 = Color3.fromRGB(90, 150, 90)
-local yesCorner = Instance.new("UICorner", yesBtn)
-yesCorner.CornerRadius = UDim.new(0, 6)
-
-local noBtn = Instance.new("TextButton", confirmFrame)
-noBtn.Size = UDim2.new(0.45, -5, 0, 30)
-noBtn.Position = UDim2.new(0.55, 0, 1, -40)
-noBtn.Text = "Não"
-noBtn.BackgroundColor3 = Color3.fromRGB(150, 70, 70)
-local noCorner = Instance.new("UICorner", noBtn)
-noCorner.CornerRadius = UDim.new(0, 6)
-
--- Frame Principal da GUI
+-- Frame Principal
 local frame = Instance.new("Frame", screenGui)
-frame.Size = UDim2.new(0, 260, 0, 320)
+frame.Size = UDim2.new(0, 280, 0, 180)
 frame.Position = UDim2.new(0, 20, 0, 100)
-frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-frame.BorderSizePixel = 0
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+frame.BackgroundTransparency = 0.05
 frame.Visible = false
 frame.Active = true
 frame.Draggable = true
-frame.BackgroundTransparency = 0.05
 local UICorner = Instance.new("UICorner", frame)
 UICorner.CornerRadius = UDim.new(0, 10)
 
--- Alternar Visibilidade do Frame
+-- Alternar GUI
 local uiVisible = false
 toggleButton.MouseButton1Click:Connect(function()
     uiVisible = not uiVisible
@@ -167,222 +292,59 @@ end)
 
 -- Título
 local title = Instance.new("TextLabel", frame)
-title.Text = "ANÔNIMO TX - FPS BOOST PRO"
-title.Size = UDim2.new(1, 0, 0, 35)
+title.Text = "FPS BOOST EXTREMO"
+title.Size = UDim2.new(1, 0, 0, 40)
 title.BackgroundTransparency = 1
 title.TextColor3 = Color3.fromRGB(200, 200, 255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
 
--- Lógica de Otimização
-local levels = {"Baixo", "Médio", "Alto", "Máximo"}
-local selectedLevel = "Baixo"
-local buttons = {}
+-- Botão de Ativação
+local altoBtn = Instance.new("TextButton", frame)
+altoBtn.Size = UDim2.new(1, -30, 0, 40)
+altoBtn.Position = UDim2.new(0, 15, 0, 50)
+altoBtn.Text = "ATIVAR OTI IZAÇÃO ALTA"
+altoBtn.BackgroundColor3 = Color3.fromRGB(70, 100, 150)
+altoBtn.TextColor3 = Color3.new(1, 1, 1)
+altoBtn.Font = Enum.Font.GothamBold
+altoBtn.TextSize = 16
+local altoCorner = Instance.new("UICorner", altoBtn)
+altoCorner.CornerRadius = UDim.new(0, 6)
 
--- Função de Otimização Principal (ATUALIZADA)
-function updateOptimization(level)
-    local cam = workspace.CurrentCamera
-
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        pcall(function()
-            if level == "Máximo" then
-                -- ❌ Efeitos visuais
-                if obj:IsA("ParticleEmitter") or obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Trail") or obj:IsA("Beam") then
-                    obj.Enabled = false
-                end
-
-                -- 🔇 Sons
-                if obj:IsA("Sound") then
-                    obj:Stop()
-                    obj.Volume = 0
-                end
-
-                -- 🖼️ Texturas
-                if obj:IsA("Texture") or obj:IsA("Decal") then
-                    removeIf(obj, true)
-                end
-
-                -- 🎯 Interfaces e efeitos de tela
-                if obj:IsA("BillboardGui") or obj:IsA("SurfaceGui") or obj:IsA("SelectionBox") or obj:IsA("Highlight") then
-                    removeIf(obj, true)
-                end
-
-                -- 🧱 Partes físicas
-                if obj:IsA("BasePart") then
-                    obj.Material = Enum.Material.SmoothPlastic
-                    obj.Reflectance = 0
-                    obj.CastShadow = false
-                    obj.Anchored = true
-                    obj.CanCollide = false
-
-                    if isFarAway(obj, cam) then
-                        obj.Transparency = 1
-                    end
-                end
-
-                -- 🧲 Alinhamentos e animações
-                if obj:IsA("AlignPosition") or obj:IsA("AlignOrientation") or obj:IsA("BodyMover") or obj:IsA("AnimationController") or obj:IsA("Animator") then
-                    removeIf(obj, true)
-                end
-
-                -- 🤖 Humanoides
-                if obj:IsA("Humanoid") then
-                    obj:ChangeState(Enum.HumanoidStateType.Physics)
-                    obj.WalkSpeed = 0
-                    obj.JumpPower = 0
-                    obj.AutoRotate = false
-                    obj.BreakJointsOnDeath = false
-                    obj:SetStateEnabled(Enum.HumanoidStateType.Running, false)
-                    obj:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
-                end
-
-                -- 👕 Roupas e acessórios
-                if obj:IsA("Accessory") or obj:IsA("Clothing") or obj:IsA("Shirt") or obj:IsA("Pants") or obj:IsA("CharacterMesh") then
-                    removeIf(obj, true)
-                end
-
-            elseif level == "Alto" then
-                -- Efeitos visuais: desabilitar
-                if obj:IsA("ParticleEmitter") or obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Trail") or obj:IsA("Beam") then
-                    obj.Enabled = false
-                end
-
-                -- Sons: parar e volume 0
-                if obj:IsA("Sound") then
-                    obj:Stop()
-                    obj.Volume = 0
-                end
-
-                -- Texturas: remover
-                if obj:IsA("Texture") or obj:IsA("Decal") then
-                    removeIf(obj, true)
-                end
-
-                -- Interfaces e efeitos de tela: remover
-                if obj:IsA("BillboardGui") or obj:IsA("SurfaceGui") or obj:IsA("SelectionBox") or obj:IsA("Highlight") then
-                    removeIf(obj, true)
-                end
-
-                -- Partes físicas: ajustar material, sombra, etc.
-                if obj:IsA("BasePart") then
-                    obj.Material = Enum.Material.SmoothPlastic
-                    obj.Reflectance = 0
-                    obj.CastShadow = false
-                end
-
-                -- Alinhamentos e animações: remover
-                if obj:IsA("AlignPosition") or obj:IsA("AlignOrientation") or obj:IsA("BodyMover") or obj:IsA("AnimationController") or obj:IsA("Animator") then
-                    removeIf(obj, true)
-                end
-
-            elseif level == "Médio" then
-                removeIf(obj, obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Beam") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") or obj:IsA("PointLight") or obj:IsA("Decal"))
-            elseif level == "Baixo" then
-                removeIf(obj, obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke") or obj:IsA("Fire") and obj.Lifetime.Max > 2)
-            end
-        end)
-    end
-
-    -- Configurações de iluminação e streaming
-    if level == "Máximo" or level == "Alto" then
-        Lighting.FogEnd = 150
-        Lighting.GlobalShadows = false
-        Lighting.Brightness = 1
-        Workspace.StreamingEnabled = true
-        Workspace.StreamingTargetRadius = 64
-    elseif level == "Médio" then
-        Lighting.FogEnd = 500
-        Lighting.GlobalShadows = true
-    elseif level == "Baixo" then
-        Lighting.FogEnd = 1000
-        Lighting.GlobalShadows = true
-    end
-end
-
--- Botões de Nível
-for i, level in ipairs(levels) do
-    local btn = Instance.new("TextButton", frame)
-    btn.Size = UDim2.new(1, -30, 0, 30)
-    btn.Position = UDim2.new(0, 15, 0, 40 + (i - 1) * 35)
-    btn.Text = level
-    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 16
-    btn.AutoButtonColor = true
-    local corner = Instance.new("UICorner", btn)
-    corner.CornerRadius = UDim.new(0, 6)
-
-    btn.MouseButton1Click:Connect(function()
-        if level == "Máximo" then
-            confirmFrame.Visible = true
-        else
-            -- Parar o loop de otimização contínua
-            if optimizationThread then
-                optimizationThread = false
-            end
-
-            selectedLevel = level
-            statusLabel.Text = "Status: Otimizando ("..level..")"
-            updateOptimization(level)
-            statusLabel.Text = "Status: Concluído ("..level..")"
-            notify("Otimização: "..level.." Concluída!", true)
-        end
-    end)
-
-    buttons[level] = btn
-end
-
--- Botões de Confirmação
-yesBtn.MouseButton1Click:Connect(function()
-    confirmFrame.Visible = false
-    selectedLevel = "Máximo"
-    statusLabel.Text = "Status: Otimizando (Máximo)"
-
-    -- Iniciar loop de otimização contínua
-    optimizationThread = true
-    spawn(function()
-        while optimizationThread do
-            updateOptimization("Máximo")
-            wait(10)
-        end
-    end)
-
-    statusLabel.Text = "Status: Concluído (Máximo) (Contínuo)"
-    notify("Otimização Máxima Concluída! (Contínuo)", true)
+altoBtn.MouseButton1Click:Connect(function()
+    statusLabel.Text = "Status: Aplicando otimizações..."
+    updateOptimization()
+    statusLabel.Text = "Status: Otimização completa!"
+    notify("Otimização EXTREMA aplicada!", true)
 end)
 
-noBtn.MouseButton1Click:Connect(function()
-    confirmFrame.Visible = false
-end)
-
--- Botão de Otimização Automática
+-- Botão de Limpeza Automática
 local autoBtn = Instance.new("TextButton", frame)
-autoBtn.Size = UDim2.new(1, -30, 0, 30)
-autoBtn.Position = UDim2.new(0, 15, 0, 200)
-autoBtn.Text = "Otimização Automática"
-autoBtn.BackgroundColor3 = Color3.fromRGB(150, 60, 60)
+autoBtn.Size = UDim2.new(1, -30, 0, 40)
+autoBtn.Position = UDim2.new(0, 15, 0, 100)
+autoBtn.Text = "ATIVAR AUTO-LIMPEZA"
+autoBtn.BackgroundColor3 = Color3.fromRGB(150, 70, 70)
 autoBtn.TextColor3 = Color3.new(1, 1, 1)
 autoBtn.Font = Enum.Font.GothamBold
 autoBtn.TextSize = 16
-local corner = Instance.new("UICorner", autoBtn)
-corner.CornerRadius = UDim.new(0, 6)
+local autoCorner = Instance.new("UICorner", autoBtn)
+autoCorner.CornerRadius = UDim.new(0, 6)
 
 autoBtn.MouseButton1Click:Connect(function()
-    selectedLevel = "Máximo"
-    statusLabel.Text = "Status: Otimizando Automaticamente..."
-
-    -- Iniciar loop de otimização contínua
-    optimizationThread = true
-    spawn(function()
-        while optimizationThread do
-            updateOptimization("Máximo")
-            wait(10)
-        end
-    end)
-
-    statusLabel.Text = "Status: Concluído (Auto) (Contínuo)"
-    notify("Otimização Automática Concluída! (Contínuo)", true)
+    autoCleanEnabled = not autoCleanEnabled
+    
+    if autoCleanEnabled then
+        startAutoClean()
+        statusLabel.Text = "Status: Auto-limpeza ATIVA"
+        autoBtn.BackgroundColor3 = Color3.fromRGB(70, 150, 70)
+        autoBtn.Text = "DESATIVAR AUTO-LIMPEZA"
+        notify("Auto-limpeza ATIVADA!", true)
+    else
+        statusLabel.Text = "Status: Auto-limpeza DESATIVADA"
+        autoBtn.BackgroundColor3 = Color3.fromRGB(150, 70, 70)
+        autoBtn.Text = "ATIVAR AUTO-LIMPEZA"
+        notify("Auto-limpeza DESATIVADA!", false)
+    end
 end)
 
 -- Monitor de FPS
@@ -397,12 +359,15 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
--- CRÉDITOS FINAIS
+-- CRÉDITOS
 local credits = Instance.new("TextLabel", frame)
 credits.Size = UDim2.new(1, -20, 0, 20)
 credits.Position = UDim2.new(0, 10, 1, -25)
-credits.Text = "CRIADO POR: ANÔNIMO TX"
+credits.Text = "ANÔNIMO TX - FPS BOOST EXTREMO"
 credits.TextColor3 = Color3.fromRGB(255, 255, 0)
 credits.BackgroundTransparency = 1
 credits.Font = Enum.Font.GothamBold
 credits.TextSize = 12
+
+-- Inicialização
+notify("FPS Boost Extremo carregado!", true)
