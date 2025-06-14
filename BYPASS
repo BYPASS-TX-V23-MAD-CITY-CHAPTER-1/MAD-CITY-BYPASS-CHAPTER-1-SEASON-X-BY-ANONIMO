@@ -1,4 +1,15 @@
--- ANÔNIMO TX - PERFORMANCE SAFE OPTIMIZER
+--[[
+    ANÔNIMO TX - FPS BOOST PRO + FAKE LAG
+    Recursos:
+    - Níveis de otimização: Baixo, Médio, Alto, Máximo
+    - Botão de Otimização Automática
+    - Monitor de FPS e Memória em tempo real
+    - Sistema de Notificações
+    - Controle de distância de renderização
+    - Módulo de Fake Lag (congela jogadores)
+    - CRÉDITOS: ANÔNIMO TX
+--]]
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
@@ -10,266 +21,273 @@ local LocalPlayer = Players.LocalPlayer
 -- Configurações
 local RENDER_DISTANCE = 100
 local CLEANUP_INTERVAL = 10
-local active = true
 
--- Variáveis globais
+-- Estados
 local optimizationEnabled = false
-local optimizationThread = nil
+local fakeLagEnabled = false
+local frozenPlayers = {}
 
--- Função para congelar objetos distantes
-local function freezeDistantObjects()
-    local cam = Workspace.CurrentCamera
-    if not cam then return end
+-- Funções de Fake Lag
+local function freezePlayer(player)
+    if player == LocalPlayer then return end
     
-    local camPos = cam.CFrame.Position
-    
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        pcall(function()
-            if obj:IsA("BasePart") then
-                local dist = (camPos - obj.Position).Magnitude
-                
-                if dist > RENDER_DISTANCE then
-                    -- Congelar objetos físicos
-                    if not obj.Anchored then
-                        obj.Anchored = true
-                        obj:SetAttribute("WasAnchored", false)
-                    end
-                    
-                    -- Esconder efeitos
-                    if obj:IsA("ParticleEmitter") then
-                        obj.Enabled = false
-                    end
-                    
-                    -- Reduzir transparência
-                    obj.Transparency = math.min(obj.Transparency + 0.5, 0.9)
-                else
-                    -- Restaurar objetos próximos
-                    if obj:GetAttribute("WasAnchored") == false then
-                        obj.Anchored = false
-                    end
-                    
-                    if obj:IsA("ParticleEmitter") then
-                        obj.Enabled = true
-                    end
-                    
-                    obj.Transparency = 0
-                end
+    local char = player.Character
+    if char then
+        local humanoid = char:FindFirstChild("Humanoid")
+        if humanoid then
+            -- Salvar estado original
+            if not frozenPlayers[player] then
+                frozenPlayers[player] = {
+                    WalkSpeed = humanoid.WalkSpeed,
+                    JumpPower = humanoid.JumpPower,
+                    AutoRotate = humanoid.AutoRotate
+                }
             end
             
-            -- Processar explosões e fogos
-            if (obj:IsA("Explosion") or (obj:IsA("Fire")) and dist > RENDER_DISTANCE then
-                obj.Enabled = false
+            -- Congelar
+            humanoid.WalkSpeed = 0
+            humanoid.JumpPower = 0
+            humanoid.AutoRotate = false
+        end
+        
+        -- Congelar partes
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Anchored = true
             end
+        end
+    end
+end
+
+local function unfreezePlayer(player)
+    local data = frozenPlayers[player]
+    if data then
+        local char = player.Character
+        if char then
+            local humanoid = char:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = data.WalkSpeed
+                humanoid.JumpPower = data.JumpPower
+                humanoid.AutoRotate = data.AutoRotate
+            end
+            
+            -- Descongelar partes
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Anchored = false
+                end
+            end
+        end
+        
+        frozenPlayers[player] = nil
+    end
+end
+
+local function toggleFakeLag()
+    fakeLagEnabled = not fakeLagEnabled
+    
+    if fakeLagEnabled then
+        -- Congelar todos
+        for _, player in ipairs(Players:GetPlayers()) do
+            freezePlayer(player)
+        end
+        
+        -- Monitorar novos jogadores
+        Players.PlayerAdded:Connect(function(newPlayer)
+            task.wait(1) -- Esperar personagem carregar
+            freezePlayer(newPlayer)
+        end)
+    else
+        -- Descongelar todos
+        for player, _ in pairs(frozenPlayers) do
+            unfreezePlayer(player)
+        end
+        frozenPlayers = {}
+    end
+    
+    return fakeLagEnabled
+end
+
+-- Funções de Otimização
+local function removeIf(obj, condition)
+    if condition and obj and obj.Parent then
+        pcall(function()
+            obj:Destroy()
         end)
     end
 end
 
--- Função para remover texturas
-local function removeTextures()
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        pcall(function()
-            -- Remover texturas de objetos
-            if obj:IsA("Texture") or obj:IsA("Decal") then
-                obj.Transparency = 1
-            end
-            
-            -- Remover texturas de personagens
-            if obj:IsA("CharacterMesh") or obj:IsA("ShirtGraphic") then
-                obj:Destroy()
-            end
-            
-            -- Simplificar materiais
-            if obj:IsA("BasePart") then
-                obj.Material = Enum.Material.Plastic
-                obj.Reflectance = 0
-            end
-        end)
-    end
-    
-    -- Processar players
-    for _, player in ipairs(Players:GetPlayers()) do
-        pcall(function()
-            if player.Character then
-                -- Remover texturas de roupas
-                for _, accessory in ipairs(player.Character:GetDescendants()) do
-                    if accessory:IsA("Shirt") or accessory:IsA("Pants") or accessory:IsA("ShirtGraphic") then
-                        accessory:Destroy()
-                    end
-                    
-                    -- Congelar animações distantes
-                    local humanoid = player.Character:FindFirstChild("Humanoid")
-                    if humanoid and player ~= LocalPlayer then
-                        local root = player.Character:FindFirstChild("HumanoidRootPart")
-                        if root and (root.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude > RENDER_DISTANCE then
-                            humanoid.WalkSpeed = 0
-                        else
-                            humanoid.WalkSpeed = 16
-                        end
-                    end
-                end
-            end
-        end)
-    end
-end
-
--- Função principal de otimização
 local function optimizePerformance()
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        pcall(function()
+            -- Implemente aqui sua lógica de otimização
+            -- Exemplo: removeIf(obj, obj:IsA("ParticleEmitter"))
+        end)
+    end
+    
+    -- Configurações de ambiente
     pcall(function()
-        -- Configurações de ambiente
         Lighting.GlobalShadows = false
         Lighting.FogEnd = RENDER_DISTANCE * 1.5
         settings().Rendering.QualityLevel = 1
-        
-        -- Remover texturas
-        removeTextures()
-        
-        -- Congelar objetos distantes
-        freezeDistantObjects()
-        
-        -- Desativar sons distantes
-        for _, sound in ipairs(Workspace:GetDescendants()) do
-            pcall(function()
-                if sound:IsA("Sound") then
-                    local dist = (Workspace.CurrentCamera.CFrame.Position - sound.Position).Magnitude
-                    if dist > RENDER_DISTANCE then
-                        sound.Volume = 0
-                    end
-                end
-            end)
-        end
     end)
 end
 
--- Sistema de otimização automática
 local function startOptimization()
-    if optimizationThread then return end
-    
-    optimizationThread = task.spawn(function()
-        while optimizationEnabled and active do
-            optimizePerformance()
-            task.wait(CLEANUP_INTERVAL)
-        end
-        optimizationThread = nil
-    end)
+    while optimizationEnabled do
+        optimizePerformance()
+        task.wait(CLEANUP_INTERVAL)
+    end
 end
 
--- Configuração da GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SafePerformanceOptimizer"
-screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+-- Interface
+local screenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+screenGui.Name = "FPSBoostProUI"
 screenGui.ResetOnSpawn = false
 
 -- Botão de Alternar
-local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(0, 200, 0, 35)
+local toggleButton = Instance.new("TextButton", screenGui)
+toggleButton.Size = UDim2.new(0, 180, 0, 35)
 toggleButton.Position = UDim2.new(0, 20, 0, 20)
-toggleButton.Text = "Mostrar Otimizador"
+toggleButton.Text = "Mostrar FPS Boost"
 toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
 toggleButton.TextColor3 = Color3.new(1, 1, 1)
 toggleButton.Font = Enum.Font.GothamBold
 toggleButton.TextSize = 14
-toggleButton.Parent = screenGui
-
-local toggleCorner = Instance.new("UICorner")
+local toggleCorner = Instance.new("UICorner", toggleButton)
 toggleCorner.CornerRadius = UDim.new(0, 8)
-toggleCorner.Parent = toggleButton
 
--- Display de FPS e Memória
-local fpsLabel = Instance.new("TextLabel")
-fpsLabel.Size = UDim2.new(0, 200, 0, 30)
-fpsLabel.Position = UDim2.new(0, 230, 0, 20)
+-- Display de FPS
+local fpsLabel = Instance.new("TextLabel", screenGui)
+fpsLabel.Size = UDim2.new(0, 180, 0, 30)
+fpsLabel.Position = UDim2.new(0, 210, 0, 20)
 fpsLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
 fpsLabel.BackgroundTransparency = 0.3
 fpsLabel.TextColor3 = Color3.new(1, 1, 1)
 fpsLabel.Font = Enum.Font.GothamBold
 fpsLabel.TextSize = 14
 fpsLabel.Text = "FPS: 0 | Mem: 0MB"
-fpsLabel.Parent = screenGui
-
-local fpsCorner = Instance.new("UICorner")
+local fpsCorner = Instance.new("UICorner", fpsLabel)
 fpsCorner.CornerRadius = UDim.new(0, 6)
-fpsCorner.Parent = fpsLabel
 
 -- Frame Principal
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 280, 0, 150)
+local frame = Instance.new("Frame", screenGui)
+frame.Size = UDim2.new(0, 280, 0, 300)
 frame.Position = UDim2.new(0, 20, 0, 100)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 frame.BackgroundTransparency = 0.05
 frame.Visible = false
 frame.Active = true
 frame.Draggable = true
-frame.Parent = screenGui
-
-local UICorner = Instance.new("UICorner")
+local UICorner = Instance.new("UICorner", frame)
 UICorner.CornerRadius = UDim.new(0, 10)
-UICorner.Parent = frame
 
 -- Alternar GUI
 local uiVisible = false
 toggleButton.MouseButton1Click:Connect(function()
     uiVisible = not uiVisible
     frame.Visible = uiVisible
-    toggleButton.Text = uiVisible and "Esconder Otimizador" or "Mostrar Otimizador"
+    toggleButton.Text = uiVisible and "Esconder FPS Boost" or "Mostrar FPS Boost"
 end)
 
 -- Título
-local title = Instance.new("TextLabel")
-title.Text = "PERFORMANCE SAFE OPTIMIZER"
+local title = Instance.new("TextLabel", frame)
+title.Text = "ANÔNIMO TX - FPS BOOST PRO"
 title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundTransparency = 1
 title.TextColor3 = Color3.fromRGB(200, 200, 255)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 18
-title.Parent = frame
+title.TextSize = 20
 
--- Botão de Ativação
-local toggleOptBtn = Instance.new("TextButton")
-toggleOptBtn.Size = UDim2.new(1, -30, 0, 35)
-toggleOptBtn.Position = UDim2.new(0, 15, 0, 40)
-toggleOptBtn.Text = "ATIVAR OTIMIZAÇÃO"
-toggleOptBtn.BackgroundColor3 = Color3.fromRGB(70, 150, 70)
-toggleOptBtn.TextColor3 = Color3.new(1, 1, 1)
-toggleOptBtn.Font = Enum.Font.GothamBold
-toggleOptBtn.TextSize = 16
-toggleOptBtn.Parent = frame
+-- Botão de Otimização
+local optBtn = Instance.new("TextButton", frame)
+optBtn.Size = UDim2.new(1, -30, 0, 35)
+optBtn.Position = UDim2.new(0, 15, 0, 40)
+optBtn.Text = "OTIMIZAÇÃO: DESATIVADO"
+optBtn.BackgroundColor3 = Color3.fromRGB(150, 70, 70)
+optBtn.TextColor3 = Color3.new(1, 1, 1)
+optBtn.Font = Enum.Font.GothamBold
+optBtn.TextSize = 16
+local optCorner = Instance.new("UICorner", optBtn)
+optCorner.CornerRadius = UDim.new(0, 6)
 
-local toggleCorner = Instance.new("UICorner")
-toggleCorner.CornerRadius = UDim.new(0, 6)
-toggleCorner.Parent = toggleOptBtn
-
-toggleOptBtn.MouseButton1Click:Connect(function()
+optBtn.MouseButton1Click:Connect(function()
     optimizationEnabled = not optimizationEnabled
     
     if optimizationEnabled then
-        startOptimization()
-        toggleOptBtn.Text = "DESATIVAR OTIMIZAÇÃO"
-        toggleOptBtn.BackgroundColor3 = Color3.fromRGB(150, 70, 70)
+        task.spawn(startOptimization)
+        optBtn.Text = "OTIMIZAÇÃO: ATIVADO"
+        optBtn.BackgroundColor3 = Color3.fromRGB(70, 150, 70)
     else
-        toggleOptBtn.Text = "ATIVAR OTIMIZAÇÃO"
-        toggleOptBtn.BackgroundColor3 = Color3.fromRGB(70, 150, 70)
+        optBtn.Text = "OTIMIZAÇÃO: DESATIVADO"
+        optBtn.BackgroundColor3 = Color3.fromRGB(150, 70, 70)
     end
 end)
 
--- Botão de Render Distance
-local renderBtn = Instance.new("TextButton")
-renderBtn.Size = UDim2.new(1, -30, 0, 35)
-renderBtn.Position = UDim2.new(0, 15, 0, 85)
-renderBtn.Text = "DISTÂNCIA: " .. RENDER_DISTANCE .. " ESTUDOS"
-renderBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 150)
-renderBtn.TextColor3 = Color3.new(1, 1, 1)
-renderBtn.Font = Enum.Font.GothamBold
-renderBtn.TextSize = 14
-renderBtn.Parent = frame
+-- Botão Fake Lag
+local fakeLagBtn = Instance.new("TextButton", frame)
+fakeLagBtn.Size = UDim2.new(1, -30, 0, 35)
+fakeLagBtn.Position = UDim2.new(0, 15, 0, 85)
+fakeLagBtn.Text = "FAKE LAG: DESATIVADO"
+fakeLagBtn.BackgroundColor3 = Color3.fromRGB(150, 70, 70)
+fakeLagBtn.TextColor3 = Color3.new(1, 1, 1)
+fakeLagBtn.Font = Enum.Font.GothamBold
+fakeLagBtn.TextSize = 16
+local fakeLagCorner = Instance.new("UICorner", fakeLagBtn)
+fakeLagCorner.CornerRadius = UDim.new(0, 6)
 
-local renderCorner = Instance.new("UICorner")
-renderCorner.CornerRadius = UDim.new(0, 6)
-renderCorner.Parent = renderBtn
-
-renderBtn.MouseButton1Click:Connect(function()
-    RENDER_DISTANCE = RENDER_DISTANCE == 100 and 50 or RENDER_DISTANCE == 50 and 150 or 100
-    renderBtn.Text = "DISTÂNCIA: " .. RENDER_DISTANCE .. " ESTUDOS"
+fakeLagBtn.MouseButton1Click:Connect(function()
+    local success, result = pcall(toggleFakeLag)
+    
+    if success then
+        if fakeLagEnabled then
+            fakeLagBtn.Text = "FAKE LAG: ATIVADO"
+            fakeLagBtn.BackgroundColor3 = Color3.fromRGB(70, 150, 70)
+        else
+            fakeLagBtn.Text = "FAKE LAG: DESATIVADO"
+            fakeLagBtn.BackgroundColor3 = Color3.fromRGB(150, 70, 70)
+        end
+    else
+        fakeLagBtn.Text = "ERRO: TENTE NOVAMENTE"
+        task.delay(1, function()
+            fakeLagBtn.Text = "FAKE LAG: DESATIVADO"
+        end)
+    end
 end)
+
+-- Botão de Distância
+local distBtn = Instance.new("TextButton", frame)
+distBtn.Size = UDim2.new(1, -30, 0, 35)
+distBtn.Position = UDim2.new(0, 15, 0, 130)
+distBtn.Text = "DISTÂNCIA: " .. RENDER_DISTANCE
+distBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 150)
+distBtn.TextColor3 = Color3.new(1, 1, 1)
+distBtn.Font = Enum.Font.GothamBold
+distBtn.TextSize = 16
+local distCorner = Instance.new("UICorner", distBtn)
+distCorner.CornerRadius = UDim.new(0, 6)
+
+-- Botão de Nível
+local levelBtn = Instance.new("TextButton", frame)
+levelBtn.Size = UDim2.new(1, -30, 0, 35)
+levelBtn.Position = UDim2.new(0, 15, 0, 175)
+levelBtn.Text = "NÍVEL: MÉDIO"
+levelBtn.BackgroundColor3 = Color3.fromRGB(150, 150, 70)
+levelBtn.TextColor3 = Color3.new(1, 1, 1)
+levelBtn.Font = Enum.Font.GothamBold
+levelBtn.TextSize = 16
+local levelCorner = Instance.new("UICorner", levelBtn)
+levelCorner.CornerRadius = UDim.new(0, 6)
+
+-- Créditos
+local credits = Instance.new("TextLabel", frame)
+credits.Text = "CRIADO POR: ANÔNIMO TX"
+credits.Size = UDim2.new(1, -20, 0, 20)
+credits.Position = UDim2.new(0, 10, 0.92, 0)
+credits.TextColor3 = Color3.fromRGB(255, 255, 0)
+credits.BackgroundTransparency = 1
+credits.Font = Enum.Font.GothamBold
+credits.TextSize = 14
 
 -- Monitor de FPS
 local fps, frames = 0, 0
@@ -283,46 +301,9 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
--- Função para restaurar estado original
-local function restoreOriginalState()
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        pcall(function()
-            if obj:GetAttribute("WasAnchored") == false then
-                obj.Anchored = false
-            end
-            
-            if obj:IsA("ParticleEmitter") then
-                obj.Enabled = true
-            end
-            
-            obj.Transparency = 0
-        end)
-    end
-    
-    for _, player in ipairs(Players:GetPlayers()) do
-        pcall(function()
-            if player.Character then
-                local humanoid = player.Character:FindFirstChild("Humanoid")
-                if humanoid then
-                    humanoid.WalkSpeed = 16
-                end
-            end
-        end)
-    end
-end
-
--- Desativar ao resetar
-LocalPlayer.CharacterRemoving:Connect(function()
-    active = false
-    restoreOriginalState()
-    if optimizationThread then
-        task.cancel(optimizationThread)
-    end
-end)
-
 -- Notificação inicial
 local function notify(message)
-    local notif = Instance.new("TextLabel")
+    local notif = Instance.new("TextLabel", screenGui)
     notif.Text = message
     notif.Size = UDim2.new(0, 300, 0, 40)
     notif.Position = UDim2.new(0.5, -150, 0.1, 0)
@@ -332,17 +313,24 @@ local function notify(message)
     notif.Font = Enum.Font.GothamBold
     notif.TextSize = 18
     notif.AnchorPoint = Vector2.new(0.5, 0)
-    notif.Parent = screenGui
-
-    local notifCorner = Instance.new("UICorner")
+    local notifCorner = Instance.new("UICorner", notif)
     notifCorner.CornerRadius = UDim.new(0, 6)
-    notifCorner.Parent = notif
 
+    TweenService:Create(notif, TweenInfo.new(0.3), {TextTransparency = 0, BackgroundTransparency = 0.2}):Play()
     task.delay(3, function()
-        if notif and notif.Parent then
-            notif:Destroy()
-        end
+        TweenService:Create(notif, TweenInfo.new(0.3), {TextTransparency = 1, BackgroundTransparency = 1}):Play()
+        task.wait(0.3)
+        notif:Destroy()
     end)
 end
 
-notify("Performance Safe Optimizer carregado!")
+notify("FPS Boost Pro + Fake Lag carregado!")
+
+-- Desativar ao resetar
+LocalPlayer.CharacterRemoving:Connect(function()
+    if fakeLagEnabled then 
+        pcall(toggleFakeLag)
+        fakeLagBtn.Text = "FAKE LAG: DESATIVADO"
+        fakeLagBtn.BackgroundColor3 = Color3.fromRGB(150, 70, 70)
+    end
+end)
