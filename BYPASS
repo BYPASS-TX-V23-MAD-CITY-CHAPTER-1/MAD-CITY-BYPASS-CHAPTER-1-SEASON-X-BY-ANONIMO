@@ -1,14 +1,4 @@
---[[
-    ANÔNIMO TX - ULTRA PERFORMANCE PACK
-    Recursos:
-    - Memory Cleaner: Limpeza agressiva de RAM/CPU
-    - TX Performance Pack: Redução extrema de gráficos
-      * Remove todas as texturas
-      * Desativa animações e NPCs
-      * Renderização por distância estilo Minecraft
-      * Objetos distantes são completamente desativados
---]]
-
+-- ANÔNIMO TX - ULTRA PERFORMANCE PACK (VERSÃO CORRIGIDA)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
@@ -18,51 +8,43 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
 -- Configurações
-local CLEANUP_INTERVAL = 0.1 -- 100ms para limpeza de memória
-local RENDER_DISTANCE = 100 -- Distância de renderização
+local CLEANUP_INTERVAL = 0.1
+local RENDER_DISTANCE = 100
+local active = true
 
 -- Variáveis globais
 local autoCleanEnabled = false
 local performanceModeEnabled = false
 local cleanThread, renderThread = nil
 
--- Função de limpeza de memória
+-- Função de limpeza de memória (simplificada e mais segura)
 local function clearMemoryCache()
-    -- Coleta de lixo agressiva
-    for i = 1, 5 do
-        collectgarbage("collect")
-        task.wait()
-    end
+    pcall(function()
+        for i = 1, 3 do
+            collectgarbage("collect")
+        end
+    end)
     
-    -- Liberar texturas
-    for _, instance in ipairs(workspace:GetDescendants()) do
-        pcall(function()
-            if instance:IsA("Texture") or instance:IsA("Decal") then
-                instance:Release()
-            end
-        end)
-    end
-    
-    -- Reduzir qualidade gráfica
-    settings().Rendering.QualityLevel = 1
-    settings().Rendering.EagerBulkExecution = true
+    pcall(function()
+        settings().Rendering.QualityLevel = 1
+    end)
 end
 
--- Função principal do TX Performance Pack
+-- Função principal do TX Performance Pack (revisada)
 local function enablePerformanceMode()
-    if performanceModeEnabled then return end
-    performanceModeEnabled = true
+    if not active then return end
     
-    -- 1. Configurações de ambiente
-    Lighting.GlobalShadows = false
-    Lighting.FogEnd = RENDER_DISTANCE
-    Lighting.Brightness = 2
-    Workspace.StreamingEnabled = true
-    Workspace.StreamingTargetRadius = RENDER_DISTANCE
-    
-    -- 2. Remover todas as texturas
+    -- Configurações de ambiente
+    pcall(function()
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = RENDER_DISTANCE
+        Workspace.StreamingEnabled = true
+    end)
+
+    -- Remover texturas e simplificar objetos
     for _, obj in ipairs(Workspace:GetDescendants()) do
         pcall(function()
+            -- Remover texturas
             if obj:IsA("Texture") or obj:IsA("Decal") then
                 obj.Texture = ""
             end
@@ -73,25 +55,27 @@ local function enablePerformanceMode()
                 obj.Reflectance = 0
                 obj.CastShadow = false
             end
+            
+            -- Desativar efeitos
+            if obj:IsA("ParticleEmitter") or obj:IsA("Fire") or 
+               obj:IsA("Smoke") or obj:IsA("Sparkles") then
+                obj.Enabled = false
+            end
+            
+            -- Desativar sons
+            if obj:IsA("Sound") then
+                obj.Volume = 0
+                obj:Stop()
+            end
         end)
     end
-    
-    -- 3. Desativar efeitos visuais
-    for _, effect in ipairs({"ParticleEmitter", "Fire", "Smoke", "Sparkles", "Trail", "Beam"}) do
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            pcall(function()
-                if obj:IsA(effect) then
-                    obj.Enabled = false
-                end
-            end)
-        end
-    end
-    
-    -- 4. Sistema de renderização por distância
+
+    -- Sistema de renderização por distância
+    if renderThread then task.cancel(renderThread) end
     renderThread = task.spawn(function()
-        while performanceModeEnabled do
+        while performanceModeEnabled and active do
             local cam = Workspace.CurrentCamera
-            if cam then
+            if cam and cam.CFrame then
                 local camPos = cam.CFrame.Position
                 
                 -- Processar objetos
@@ -102,8 +86,6 @@ local function enablePerformanceMode()
                             if dist > RENDER_DISTANCE then
                                 obj.Transparency = 1
                                 obj.CanCollide = false
-                                obj.CanTouch = false
-                                obj.CanQuery = false
                             else
                                 obj.Transparency = 0
                             end
@@ -113,59 +95,33 @@ local function enablePerformanceMode()
                 
                 -- Processar personagens
                 for _, player in ipairs(Players:GetPlayers()) do
-                    if player ~= LocalPlayer then
-                        local char = player.Character
-                        if char then
-                            local root = char:FindFirstChild("HumanoidRootPart")
-                            if root then
-                                local dist = (camPos - root.Position).Magnitude
-                                
-                                if dist > RENDER_DISTANCE then
-                                    -- Desativar completamente
-                                    char.PrimaryPart = root
-                                    char:SetAttribute("OriginalCFrame", root.CFrame)
-                                    char:MoveTo(Vector3.new(0, -1000, 0))
-                                    
-                                    -- Remover texturas
-                                    for _, item in ipairs(char:GetDescendants()) do
-                                        pcall(function()
-                                            if item:IsA("Texture") or item:IsA("Decal") then
-                                                item.Texture = ""
-                                            end
-                                        end)
-                                    end
-                                else
-                                    -- Restaurar se estiver dentro do alcance
-                                    local originalCFrame = char:GetAttribute("OriginalCFrame")
-                                    if originalCFrame then
-                                        char:MoveTo(originalCFrame.Position)
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-                
-                -- Processar NPCs
-                for _, npc in ipairs(Workspace:FindFirstChild("NPCs") or {} do
                     pcall(function()
-                        local root = npc:FindFirstChild("HumanoidRootPart")
-                        if root then
-                            local dist = (camPos - root.Position).Magnitude
-                            
-                            if dist > RENDER_DISTANCE then
-                                -- Desativar animações
-                                local humanoid = npc:FindFirstChild("Humanoid")
-                                if humanoid then
-                                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, false)
-                                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
-                                    humanoid.WalkSpeed = 0
-                                end
-                                
-                                -- Remover texturas
-                                for _, item in ipairs(npc:GetDescendants()) do
-                                    if item:IsA("Texture") or item:IsA("Decal") then
-                                        item.Texture = ""
+                        if player ~= LocalPlayer then
+                            local char = player.Character
+                            if char then
+                                local root = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChildWhichIsA("BasePart")
+                                if root then
+                                    local dist = (camPos - root.Position).Magnitude
+                                    
+                                    if dist > RENDER_DISTANCE then
+                                        -- Remover texturas de roupas
+                                        for _, item in ipairs(char:GetDescendants()) do
+                                            pcall(function()
+                                                if item:IsA("Texture") or item:IsA("Decal") then
+                                                    item.Texture = ""
+                                                end
+                                                
+                                                if item:IsA("Accessory") or item:IsA("Clothing") then
+                                                    item:Destroy()
+                                                end
+                                            end)
+                                        end
+                                        
+                                        -- Desativar animação
+                                        local humanoid = char:FindFirstChild("Humanoid")
+                                        if humanoid then
+                                            humanoid.WalkSpeed = 0
+                                        end
                                     end
                                 end
                             end
@@ -176,50 +132,28 @@ local function enablePerformanceMode()
             task.wait(1)
         end
     end)
-    
-    -- 5. Desativar sons
-    for _, sound in ipairs(Workspace:GetDescendants()) do
-        pcall(function()
-            if sound:IsA("Sound") then
-                sound:Stop()
-                sound.Volume = 0
-            end
-        end)
-    end
-    
-    -- 6. Simplificar água
-    for _, water in ipairs(Workspace:FindFirstChild("Water") or {}) do
-        pcall(function()
-            water.Transparency = 0.7
-            water.Material = Enum.Material.Plastic
-        end)
-    end
 end
 
--- Sistema de limpeza automática
+-- Sistema de limpeza automática (simplificado)
 local function startAutoClean()
-    if cleanThread then return end
+    if cleanThread then task.cancel(cleanThread) end
     
     cleanThread = task.spawn(function()
-        while autoCleanEnabled do
+        while autoCleanEnabled and active do
             clearMemoryCache()
-            
-            -- Atualizar status
-            statusLabel.Text = "Status: Mem: " .. math.floor(Stats:GetTotalMemoryUsageMb()) .. "MB"
-            
             task.wait(CLEANUP_INTERVAL)
         end
-        cleanThread = nil
     end)
 end
 
 -- Configuração da GUI
-local screenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "UltraPerformancePack"
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 screenGui.ResetOnSpawn = false
 
 -- Botão de Alternar
-local toggleButton = Instance.new("TextButton", screenGui)
+local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 200, 0, 35)
 toggleButton.Position = UDim2.new(0, 20, 0, 20)
 toggleButton.Text = "Mostrar Performance Pack"
@@ -227,11 +161,14 @@ toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
 toggleButton.TextColor3 = Color3.new(1, 1, 1)
 toggleButton.Font = Enum.Font.GothamBold
 toggleButton.TextSize = 14
-local toggleCorner = Instance.new("UICorner", toggleButton)
+toggleButton.Parent = screenGui
+
+local toggleCorner = Instance.new("UICorner")
 toggleCorner.CornerRadius = UDim.new(0, 8)
+toggleCorner.Parent = toggleButton
 
 -- Display de FPS e Memória
-local fpsLabel = Instance.new("TextLabel", screenGui)
+local fpsLabel = Instance.new("TextLabel")
 fpsLabel.Size = UDim2.new(0, 200, 0, 30)
 fpsLabel.Position = UDim2.new(0, 230, 0, 20)
 fpsLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
@@ -240,11 +177,14 @@ fpsLabel.TextColor3 = Color3.new(1, 1, 1)
 fpsLabel.Font = Enum.Font.GothamBold
 fpsLabel.TextSize = 14
 fpsLabel.Text = "FPS: 0 | Mem: 0MB"
-local fpsCorner = Instance.new("UICorner", fpsLabel)
+fpsLabel.Parent = screenGui
+
+local fpsCorner = Instance.new("UICorner")
 fpsCorner.CornerRadius = UDim.new(0, 6)
+fpsCorner.Parent = fpsLabel
 
 -- Label de Status
-local statusLabel = Instance.new("TextLabel", screenGui)
+local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(0, 300, 0, 25)
 statusLabel.Position = UDim2.new(0, 20, 0, 60)
 statusLabel.BackgroundTransparency = 1
@@ -252,9 +192,10 @@ statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
 statusLabel.Font = Enum.Font.GothamBold
 statusLabel.TextSize = 16
 statusLabel.Text = "Status: Aguardando..."
+statusLabel.Parent = screenGui
 
 -- Frame Principal
-local frame = Instance.new("Frame", screenGui)
+local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 280, 0, 200)
 frame.Position = UDim2.new(0, 20, 0, 100)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
@@ -262,8 +203,11 @@ frame.BackgroundTransparency = 0.05
 frame.Visible = false
 frame.Active = true
 frame.Draggable = true
-local UICorner = Instance.new("UICorner", frame)
+frame.Parent = screenGui
+
+local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = frame
 
 -- Alternar GUI
 local uiVisible = false
@@ -274,16 +218,17 @@ toggleButton.MouseButton1Click:Connect(function()
 end)
 
 -- Título
-local title = Instance.new("TextLabel", frame)
+local title = Instance.new("TextLabel")
 title.Text = "ANÔNIMO TX - ULTRA PACK"
 title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundTransparency = 1
 title.TextColor3 = Color3.fromRGB(200, 200, 255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
+title.Parent = frame
 
 -- Botão Memory Cleaner
-local cleanBtn = Instance.new("TextButton", frame)
+local cleanBtn = Instance.new("TextButton")
 cleanBtn.Size = UDim2.new(1, -30, 0, 35)
 cleanBtn.Position = UDim2.new(0, 15, 0, 40)
 cleanBtn.Text = "MEMORY CLEANER: DESATIVADO"
@@ -291,8 +236,11 @@ cleanBtn.BackgroundColor3 = Color3.fromRGB(150, 70, 70)
 cleanBtn.TextColor3 = Color3.new(1, 1, 1)
 cleanBtn.Font = Enum.Font.GothamBold
 cleanBtn.TextSize = 14
-local cleanCorner = Instance.new("UICorner", cleanBtn)
+cleanBtn.Parent = frame
+
+local cleanCorner = Instance.new("UICorner")
 cleanCorner.CornerRadius = UDim.new(0, 6)
+cleanCorner.Parent = cleanBtn
 
 cleanBtn.MouseButton1Click:Connect(function()
     autoCleanEnabled = not autoCleanEnabled
@@ -310,7 +258,7 @@ cleanBtn.MouseButton1Click:Connect(function()
 end)
 
 -- Botão TX Performance Pack
-local perfBtn = Instance.new("TextButton", frame)
+local perfBtn = Instance.new("TextButton")
 perfBtn.Size = UDim2.new(1, -30, 0, 35)
 perfBtn.Position = UDim2.new(0, 15, 0, 85)
 perfBtn.Text = "PERFORMANCE PACK: DESATIVADO"
@@ -318,8 +266,11 @@ perfBtn.BackgroundColor3 = Color3.fromRGB(150, 70, 70)
 perfBtn.TextColor3 = Color3.new(1, 1, 1)
 perfBtn.Font = Enum.Font.GothamBold
 perfBtn.TextSize = 14
-local perfCorner = Instance.new("UICorner", perfBtn)
+perfBtn.Parent = frame
+
+local perfCorner = Instance.new("UICorner")
 perfCorner.CornerRadius = UDim.new(0, 6)
+perfCorner.Parent = perfBtn
 
 perfBtn.MouseButton1Click:Connect(function()
     performanceModeEnabled = not performanceModeEnabled
@@ -333,24 +284,11 @@ perfBtn.MouseButton1Click:Connect(function()
         perfBtn.Text = "PERFORMANCE PACK: DESATIVADO"
         perfBtn.BackgroundColor3 = Color3.fromRGB(150, 70, 70)
         statusLabel.Text = "Status: Performance DESATIVADO"
-        
-        -- Restaurar personagens
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then
-                local char = player.Character
-                if char then
-                    local originalCFrame = char:GetAttribute("OriginalCFrame")
-                    if originalCFrame then
-                        char:MoveTo(originalCFrame.Position)
-                    end
-                end
-            end
-        end
     end
 end)
 
 -- Botão de Render Distance
-local renderBtn = Instance.new("TextButton", frame)
+local renderBtn = Instance.new("TextButton")
 renderBtn.Size = UDim2.new(1, -30, 0, 35)
 renderBtn.Position = UDim2.new(0, 15, 0, 130)
 renderBtn.Text = "DISTÂNCIA: " .. RENDER_DISTANCE .. " ESTUDOS"
@@ -358,8 +296,11 @@ renderBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 150)
 renderBtn.TextColor3 = Color3.new(1, 1, 1)
 renderBtn.Font = Enum.Font.GothamBold
 renderBtn.TextSize = 14
-local renderCorner = Instance.new("UICorner", renderBtn)
+renderBtn.Parent = frame
+
+local renderCorner = Instance.new("UICorner")
 renderCorner.CornerRadius = UDim.new(0, 6)
+renderCorner.Parent = renderBtn
 
 renderBtn.MouseButton1Click:Connect(function()
     RENDER_DISTANCE = RENDER_DISTANCE == 100 and 50 or RENDER_DISTANCE == 50 and 150 or 100
@@ -380,7 +321,7 @@ RunService.RenderStepped:Connect(function(dt)
 end)
 
 -- CRÉDITOS
-local credits = Instance.new("TextLabel", frame)
+local credits = Instance.new("TextLabel")
 credits.Size = UDim2.new(1, -20, 0, 20)
 credits.Position = UDim2.new(0, 10, 1, -25)
 credits.Text = "ANÔNIMO TX - ULTRA PERFORMANCE"
@@ -388,10 +329,11 @@ credits.TextColor3 = Color3.fromRGB(255, 255, 0)
 credits.BackgroundTransparency = 1
 credits.Font = Enum.Font.GothamBold
 credits.TextSize = 12
+credits.Parent = frame
 
 -- Notificação inicial
 local function notify(message)
-    local notif = Instance.new("TextLabel", screenGui)
+    local notif = Instance.new("TextLabel")
     notif.Text = message
     notif.Size = UDim2.new(0, 300, 0, 40)
     notif.Position = UDim2.new(0.5, -150, 0.1, 0)
@@ -401,15 +343,30 @@ local function notify(message)
     notif.Font = Enum.Font.GothamBold
     notif.TextSize = 18
     notif.AnchorPoint = Vector2.new(0.5, 0)
-    local notifCorner = Instance.new("UICorner", notif)
-    notifCorner.CornerRadius = UDim.new(0, 6)
+    notif.Parent = screenGui
 
-    TweenService:Create(notif, TweenInfo.new(0.3), {TextTransparency = 0, BackgroundTransparency = 0.2}):Play()
+    local notifCorner = Instance.new("UICorner")
+    notifCorner.CornerRadius = UDim.new(0, 6)
+    notifCorner.Parent = notif
+
     task.delay(3, function()
-        TweenService:Create(notif, TweenInfo.new(0.3), {TextTransparency = 1, BackgroundTransparency = 1}):Play()
-        task.wait(0.3)
-        notif:Destroy()
+        if notif and notif.Parent then
+            notif:Destroy()
+        end
     end)
 end
 
-notify("Ultra Performance Pack carregado!\nAtive os modos para melhorar FPS")
+notify("Ultra Performance Pack carregado!")
+
+-- Função para desativar tudo ao sair
+LocalPlayer.CharacterRemoving:Connect(function()
+    active = false
+    if cleanThread then task.cancel(cleanThread) end
+    if renderThread then task.cancel(renderThread) end
+end)
+
+game:GetService("StarterGui"):SetCore("ResetButtonCallback", function()
+    active = false
+    if cleanThread then task.cancel(cleanThread) end
+    if renderThread then task.cancel(renderThread) end
+end)
